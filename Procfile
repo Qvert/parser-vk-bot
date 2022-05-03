@@ -1,0 +1,1 @@
+worker: python parser_vk/main.py

@@ -1,0 +1,12 @@
+venv/
+.idea/
+__pycache__/
+DOM AppData.lnk
+
+/DOM/run__.py
+/build/DOM/
+/build/temp/
+/build/sources/DOM.spec
+/build/sources/resources.zip
+/build/installers/
+/build/updaters/
