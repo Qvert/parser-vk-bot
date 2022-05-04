@@ -19,6 +19,7 @@ from key_board import (
 )
 from parser_vk import get_posts_vk
 from database.tools import *
+from database import admin_tools
 from tag_name import tag_names_dict
 import answer_options
 from loguru import logger
@@ -26,7 +27,8 @@ from flask import Flask, request
 
 server = Flask(__name__)
 
-# Подключение клавиатур
+# Подключение клавиатур и базы данных админа
+db = admin_tools.Admin()
 key_board_starting = InlineKeyboardMarkup(key_board_start)
 back_key = InlineKeyboardMarkup(back_key)
 key_board_choice = InlineKeyboardMarkup(key_board_choice)
@@ -69,6 +71,7 @@ def button(update, context):
             "Выбор мероприятия: /choice\n"
             "Выбор частоты отправки новостей: /frequency\n"
             "Показать список подписанных новостей : /view\n"
+            "Войти как администратор: /admin\n"
             "Начать сбор постов с новостями: /start_parser",
             reply_markup=key_board_starting,
         )
@@ -123,6 +126,7 @@ def helping(update: Updater, context: CallbackContext):
         "Выбор мероприятия: /choice\n"
         "Выбор частоты отправки новостей: /frequency\n"
         "Показать список подписанных новостей : /view\n"
+        "Войти как администратор: /admin\n"
         "Начать сбор постов с новостями: /start_parser",
         reply_markup=key_board_starting,
     )
@@ -249,11 +253,49 @@ def got_parse_mod(update, context):
         )
 
 
+@log_error
+def registration(update, context):
+    # Функция регистраций администратора
+    if db.is_admin_is_db(admin_id=update.effective_user.id):
+        update.message.reply_text(
+            'Извините, но вы не зарегестрированы как администратор\n'
+            'Предлагаю вам пройти регистрацию'
+        )
+    else:
+        pass
+
+
+@log_error
+def password(update, context):
+    # Функция проверки временного пароля для входа
+
+    if update.message.text == "секрет":
+        update.message.reply_text(
+            'Уникальный ключ подходит 😉'
+        )
+        return registration(update=update, context=context)
+    else:
+        update.message.reply_text(
+            '😮 Прошу прощения, но ключ неверный 😮'
+        )
+
+
+@log_error
+def admin(update, context):
+    # Функция приветствия будущего админа
+    update.message.reply_text(
+        "😑 Вы хотите войти как администратор. 😑\n"
+        "Для этого введите пожалуйста пароль,\n"
+        "который был выдан вам для безопасности от других пользователей."
+    )
+
+
 update = Updater(token=config.BOT_TOKEN, use_context=True)
 dis = update.dispatcher
 job_queue = JobQueue()
 job_queue.set_dispatcher(dis)
 
+dis.add_handler(CommandHandler("admin", admin))
 dis.add_handler(CommandHandler("help", helping))
 dis.add_handler(CommandHandler("start", start))
 dis.add_handler(CommandHandler("count", count))
@@ -261,6 +303,7 @@ dis.add_handler(CommandHandler("choice", choice))
 dis.add_handler(CommandHandler("frequency", frequency))
 dis.add_handler(CommandHandler("start_parser", got_parse_mod, pass_job_queue=True))
 dis.add_handler(CommandHandler("view", view_fag))
+dis.add_handler(MessageHandler(Filters.text, password))
 dis.add_handler(MessageHandler(Filters.text, answer_count))
 dis.add_handler(CallbackQueryHandler(callback=button, pass_chat_data=True))
 
