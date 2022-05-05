@@ -19,8 +19,8 @@ from key_board import (
     keyboard_frequency,
 )
 from parser_vk import get_posts_vk
-from database.tools import *
-from database import admin_tools
+from database.tools import Database
+from database.admin_tools import Admin
 from tag_name import tag_names_dict
 import answer_options
 import validators
@@ -31,7 +31,8 @@ from flask import Flask
 server = Flask(__name__)
 
 # Подключение клавиатур и базы данных админа
-db = admin_tools.Admin()
+db = Database()
+db = Admin()
 key_board_starting = InlineKeyboardMarkup(key_board_start)
 back_key = InlineKeyboardMarkup(back_key)
 key_board_choice = InlineKeyboardMarkup(key_board_choice)
@@ -99,23 +100,23 @@ def button(update, context):
 
     # Если пользователь нажал подписаться
     if variant == "subscribe":
-        if not checked_hash_tag(tag_hash=context.user_data["HASH"], id_users=id_user):
-            add_hash_tag(context.user_data["HASH"], id_user)
+        if not db.checked_hash_tag(tag_hash=context.user_data["HASH"], id_users=id_user):
+            db.add_hash_tag(context.user_data["HASH"], id_user)
             query.edit_message_text(answer_options.get_answer_subscribe())
         else:
             query.edit_message_text("Вы уже подписаны на это мероприятие 😉")
 
     # Если пользователь нажал отписаться
     if variant == "unsubscribe":
-        if checked_hash_tag(tag_hash=context.user_data["HASH"], id_users=id_user):
-            delete_hash_tag(context.user_data["HASH"], user_id=id_user)
+        if db.checked_hash_tag(tag_hash=context.user_data["HASH"], id_users=id_user):
+            db.delete_hash_tag(context.user_data["HASH"], user_id=id_user)
             query.edit_message_text(answer_options.get_answer_unsubcribe())
         else:
             query.edit_message_text("Извините, вы не были подписаны на эти новости 😑")
 
     # Если пользователь выбирал частоту
     if variant in ["one_day", "one_three_day", "one_week"]:
-        update_freq_day(callback_freq=variant, id_user=update.effective_user.id)
+        db.update_freq_day(callback_freq=variant, id_user=update.effective_user.id)
         query.edit_message_text(text=answer_options.get_answer_freq())
 
 
@@ -142,8 +143,8 @@ def start(update: Updater, context: CallbackContext):
         "новости из групп вк. Для того чтобы узнать\n"
         "как мной пользоваться нажми /help\n"
     )
-    if user_exists(id_user := update.effective_user.id) is None:
-        add_users(id_user)
+    if db.user_exists(id_user := update.effective_user.id) is None:
+        db.add_users(id_user)
     else:
         update.message.reply_text("Вы уже были зарегестрированы 😄")
 
@@ -152,11 +153,11 @@ def start(update: Updater, context: CallbackContext):
 def answer_count(update: Updater, context: CallbackContext):
     id_user = update.effective_user.id
     if update.message.text in "12345678910":
-        update_count_posts(count=update.message.text, id_user=id_user)
+        db.update_count_posts(count=update.message.text, id_user=id_user)
         update.message.reply_text(
             "Я принял ваш ответ😁😁😁\n", reply_markup=ReplyKeyboardRemove()
         )
-        logger.info(f"Записал количество постов {(count := get_count_posts(id_user))}")
+        logger.info(f"Записал количество постов {(count := db.get_count_posts(id_user))}")
 
 
 @log_error
@@ -191,10 +192,10 @@ def frequency(update: Updater, context: CallbackContext):
 
 @log_error
 def view_fag(update, context):
-    if get_spisok_hash_tag(update.message.chat_id) is not None:
+    if db.get_spisok_hash_tag(update.message.chat_id) is not None:
         update.message.reply_text(
             f"Вы подписаны на следующие хэштеги групп👇\n"
-            f'{", ".join(get_spisok_hash_tag(update.message.chat_id))}\n'
+            f'{", ".join(db.get_spisok_hash_tag(update.message.chat_id))}\n'
         )
     else:
         update.message.reply_text("Вы не подписаны ни на какие новости 😧")
@@ -204,18 +205,18 @@ def view_fag(update, context):
 def message_parse(context):
     id_users = context.job.context
 
-    if not get_count_posts(id_users)[0]:
-        update_count_posts(count=1, id_user=id_users)
+    if not db.get_count_posts(id_users)[0]:
+        db.update_count_posts(count=1, id_user=id_users)
 
-    if not if_hash_tag_in_db(id_users):
+    if not db.if_hash_tag_in_db(id_users):
         context.bot.send_message(
             chat_id=context.job.context,
             text="Извините, но вы не подписаны ни на какие новости😮😮😮\n"
             "Если желаете подписаться то нажмите /choice",
         )
     else:
-        count = get_count_posts(id_users)  # Количество постов показываемых ботом
-        spisok_tag = get_spisok_hash_tag(
+        count = db.get_count_posts(id_users)  # Количество постов показываемых ботом
+        spisok_tag = db.get_spisok_hash_tag(
             id_users
         )  # Список хэштегов которые нужно выводить
 
@@ -239,7 +240,7 @@ def got_parse_mod(update, context):
     # Функция запуска парсера по времени
     dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 86400}
 
-    var = get_freq_day_seconds(update.message.chat_id)[0]
+    var = db.get_freq_day_seconds(update.message.chat_id)[0]
 
     if var in dict_freg_day.keys():
         update.message.reply_text(
@@ -279,14 +280,6 @@ def registration_new_admin(update, context):
 
 
 @log_error
-def registration(update, context):
-    # Функция регистраций администратора
-    logger.debug("Перенаправил на registration")
-
-    return "REGISTRATION_NEW_ADMIN"
-
-
-@log_error
 def password(update, context):
     # Функция проверки временного пароля для входа
     logger.debug("Перенаправил на password")
@@ -299,7 +292,7 @@ def password(update, context):
         update.message.reply_text(
             "Для начала создайте и введите пароль, которым вы будете пользоваться"
         )
-        return "REGISTRATION"
+        return "REGISTRATION_NEW_ADMIN"
     else:
         update.message.reply_text("😮 Прошу прощения, но ключ неверный 😮")
         return "PASSWORD"
@@ -353,7 +346,6 @@ conv_handler = ConversationHandler(
     entry_points=[CommandHandler("admin", admin)],
     states={
         "PASSWORD": [MessageHandler(Filters.text, password)],
-        "REGISTRATION": [MessageHandler(Filters.text, registration)],
         "REGISTRATION_NEW_ADMIN": [
             MessageHandler(Filters.text, registration_new_admin)
         ],
