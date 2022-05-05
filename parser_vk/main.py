@@ -254,11 +254,22 @@ def got_parse_mod(update, context):
 
 
 @log_error
+def cancel(update, context):
+    update.message.reply_text(
+        'Вы успешно вошли как администратор и вам доступны две функций\n'
+        'Расширение списка новостных групп\n'
+        'Расширение списка хэштегов'
+    )
+    return ConversationHandler.END
+
+
+@log_error
 def registration_new_admin_nickname(update, context):
     # Функция для регистраций никнейма нового администратора
     nickname = update.message.text
     db_admin.add_nickname_admin(admin_id=update.effective_user.id, nickname=nickname)
     update.message.reply_text("Ваш никнейм успешно сохранён")
+    return "CANCEL"
 
 
 @log_error
@@ -352,6 +363,7 @@ conv_handler = ConversationHandler(
         "REGISTRATION_NEW_ADMIN_NICKNAME": [
             MessageHandler(Filters.text, registration_new_admin_nickname)
         ],
+        "CANCEL": [MessageHandler(Filters.text, cancel)]
     },
     fallbacks=[CommandHandler("cancel", commands_admins)],
 )

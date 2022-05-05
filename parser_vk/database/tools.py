@@ -3,8 +3,8 @@ from . import connect_to_database
 
 
 class Database:
-    def __init__(self):
-        self.connection = connect_to_database.connection
+    '''def __init__(self):
+        self.connection = connect_to_database.connection'''
 
     def user_exists(self, user_id: int) -> True | False:
         """
