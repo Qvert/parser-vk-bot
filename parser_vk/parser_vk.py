@@ -13,13 +13,3 @@ def get_posts_vk(owner_id: str, count: int) -> str:
     """
     mas = vk_api.wall.get(owner_id=owner_id, v=5.92, count=count)
     return mas
-
-
-
-
-
-
-
-
-
-

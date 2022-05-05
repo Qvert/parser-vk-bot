@@ -24,6 +24,7 @@ from database import admin_tools
 from tag_name import tag_names_dict
 import answer_options
 import validators
+import config
 from loguru import logger
 from flask import Flask
 
@@ -256,43 +257,39 @@ def registration_new_admin_nickname(update, context):
     # Функция для регистраций никнейма нового администратора
     nickname = update.message.text
     db.add_nickname_admin(admin_id=update.effective_user.id, nickname=nickname)
-    update.message.reply_text(
-        'Ваш никнейм успешно сохранён'
-    )
+    update.message.reply_text("Ваш никнейм успешно сохранён")
 
 
 @log_error
 def registration_new_admin(update, context):
     # Функция регистраций нового администратора
-    answer = validators.check_new_password(update.message.text, admin_id=update.effective_user.id)
+    answer = validators.check_new_password(
+        update.message.text, admin_id=update.effective_user.id
+    )
     if answer[0] == 0:
+        update.message.reply_text(answer[1])
         update.message.reply_text(
-            answer[1]
+            "Теперь придумайте себе никнейм и введите его пожалуйста"
         )
-        update.message.reply_text(
-            'Теперь придумайте себе никнейм и введите его пожалуйста'
-        )
-        return 'REGISTRATION_NEW_ADMIN_NICKNAME'
+        return "REGISTRATION_NEW_ADMIN_NICKNAME"
 
     else:
-        update.message.reply_text(
-            answer
-        )
-        return 'REGISTRATION_NEW_ADMIN'
+        update.message.reply_text(answer)
+        return "REGISTRATION_NEW_ADMIN"
 
 
 @log_error
 def registration(update, context):
     # Функция регистраций администратора
-    logger.debug('Перенаправил на registration')
+    logger.debug("Перенаправил на registration")
 
-    return 'REGISTRATION_NEW_ADMIN'
+    return "REGISTRATION_NEW_ADMIN"
 
 
 @log_error
 def password(update, context):
     # Функция проверки временного пароля для входа
-    logger.debug('Перенаправил на password')
+    logger.debug("Перенаправил на password")
     if update.message.text == config.SECRET_KEY:
         update.message.reply_text("Уникальный ключ подходит 😉")
         update.message.reply_text(
@@ -302,10 +299,10 @@ def password(update, context):
         update.message.reply_text(
             "Для начала создайте и введите пароль, которым вы будете пользоваться"
         )
-        return 'REGISTRATION'
+        return "REGISTRATION"
     else:
         update.message.reply_text("😮 Прошу прощения, но ключ неверный 😮")
-        return 'PASSWORD'
+        return "PASSWORD"
 
 
 @log_error
@@ -319,7 +316,7 @@ def password_check_if_admin(update, context):
         update.message.reply_text("Поздравляю, вы успешно авторизовались.")
     else:
         update.message.reply_text(
-            'Простите, но вы неправильно ввели данные. Проверьте пожалуйста.'
+            "Простите, но вы неправильно ввели данные. Проверьте пожалуйста."
         )
 
 
@@ -332,7 +329,7 @@ def admin(update, context):
             "Для начала введите пожалуйста пароль,\n"
             "который был выдан вам для безопасности от других пользователей."
         )
-        return 'PASSWORD'
+        return "PASSWORD"
     else:
         update.message.reply_text(
             "Вы уже являетесь администратором.\n"
@@ -344,9 +341,7 @@ def admin(update, context):
 
 @log_error
 def commands_admins(update, context):
-    update.message.reply_text(
-        'Здесь в будущем появятся команды!!!!'
-    )
+    update.message.reply_text("Здесь в будущем появятся команды!!!!")
 
 
 update = Updater(token=config.BOT_TOKEN, use_context=True)
@@ -357,12 +352,16 @@ job_queue.set_dispatcher(dis)
 conv_handler = ConversationHandler(
     entry_points=[CommandHandler("admin", admin)],
     states={
-        'PASSWORD': [MessageHandler(Filters.text, password)],
-        'REGISTRATION': [MessageHandler(Filters.text, registration)],
-        'REGISTRATION_NEW_ADMIN': [MessageHandler(Filters.text, registration_new_admin)],
-        'REGISTRATION_NEW_ADMIN_NICKNAME': [MessageHandler(Filters.text, registration_new_admin_nickname)]
+        "PASSWORD": [MessageHandler(Filters.text, password)],
+        "REGISTRATION": [MessageHandler(Filters.text, registration)],
+        "REGISTRATION_NEW_ADMIN": [
+            MessageHandler(Filters.text, registration_new_admin)
+        ],
+        "REGISTRATION_NEW_ADMIN_NICKNAME": [
+            MessageHandler(Filters.text, registration_new_admin_nickname)
+        ],
     },
-    fallbacks=[CommandHandler('cancel', commands_admins)],
+    fallbacks=[CommandHandler("cancel", commands_admins)],
 )
 dis.add_handler(conv_handler)
 dis.add_handler(CommandHandler("admin", admin))

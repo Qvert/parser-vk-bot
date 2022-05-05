@@ -1,10 +1,7 @@
 from loguru import logger
-import psycopg2
-from parser_vk import config
+import connect_to_database
 
-# Подключаемся к базе данных
-
-connection = psycopg2.connect(config.DATABASEP_URL, sslmode='require')
+connection = connect_to_database.connection
 
 
 def user_exists(user_id: int) -> True | False:
@@ -13,9 +10,7 @@ def user_exists(user_id: int) -> True | False:
     :return: Возвращает значени True или False в заваисимости от того есть ли user в базе данных
     """
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT user_id FROM users WHERE user_id = {user_id};"
-        )
+        cursor.execute(f"SELECT user_id FROM users WHERE user_id = {user_id};")
         return cursor.fetchone()
 
 
@@ -40,8 +35,7 @@ def checked_hash_tag(tag_hash: str, id_users: int) -> True | False:
     """
     with connection.cursor() as cursor:
         logger.info(f"Хэштег {tag_hash} получен с {id_users}")
-        cursor.execute(
-            f"SELECT hashtags FROM users WHERE user_id = {id_users};")
+        cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {id_users};")
         check_word = cursor.fetchone()[0]
         logger.debug(f"check = {check_word}")
 
@@ -67,9 +61,7 @@ def add_hash_tag(tag_hash: str, id_users: int) -> None:
     """
     with connection.cursor() as cursor:
         spisok_word = list()
-        cursor.execute(
-            f"SELECT hashtags FROM users WHERE user_id = {id_users};"
-        )
+        cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {id_users};")
         spisok_hash = cursor.fetchone()
         if spisok_hash is not None:
             for elem in list(spisok_hash):
@@ -83,7 +75,7 @@ def add_hash_tag(tag_hash: str, id_users: int) -> None:
             f"UPDATE users SET hashtags = '{stroka_spis}' WHERE user_id = {id_users};"
         )
         connection.commit()
-        logger.info(f'Добавил {tag_hash} пользователю под id: {id_users}')
+        logger.info(f"Добавил {tag_hash} пользователю под id: {id_users}")
 
 
 def delete_hash_tag(tag_hash: str, user_id: int) -> None:
@@ -93,13 +85,11 @@ def delete_hash_tag(tag_hash: str, user_id: int) -> None:
     :return: Удаляем (отписываемся) от новостей группы
     """
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT hashtags FROM users WHERE user_id = {user_id};"
-        )
+        cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {user_id};")
         spisok_hash_tag = cursor.fetchone()
-        logger.info(f'Хэштеги с базы данных {spisok_hash_tag}')
-        elements = spisok_hash_tag[0].split(',')
-        logger.debug(f'Список хэштегов перед удалением {elements}')
+        logger.info(f"Хэштеги с базы данных {spisok_hash_tag}")
+        elements = spisok_hash_tag[0].split(",")
+        logger.debug(f"Список хэштегов перед удалением {elements}")
 
         del elements[elements.index(tag_hash)]
 
@@ -117,12 +107,10 @@ def get_spisok_hash_tag(user_id: int) -> list:
     :return: Возвращаем список хэштегов, по которым будем парсить
     """
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT hashtags FROM users WHERE user_id = {user_id}"
-        )
+        cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {user_id}")
         hashtags = cursor.fetchone()
-        logger.debug(f'Полученные хэштеги {hashtags}')
-        return hashtags[0].split(',')
+        logger.debug(f"Полученные хэштеги {hashtags}")
+        return hashtags[0].split(",")
 
 
 def if_hash_tag_in_db(id_users: int) -> True | False:
@@ -131,9 +119,7 @@ def if_hash_tag_in_db(id_users: int) -> True | False:
     :return: Возвращаем True или False в зависимости от того, подписан ли хоть на что-то пользователь
     """
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT hash_tag FROM users WHERE user_id = {id_users}"
-        )
+        cursor.execute(f"SELECT hash_tag FROM users WHERE user_id = {id_users}")
         check = list(cursor.fetchone())
         logger.info(f'Получен хэштег "{check}"')
         if check == "":
@@ -148,9 +134,7 @@ def update_count_posts(count: int, id_user: int) -> None:
     :return: Обновляет поле в базе данных
     """
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"UPDATE users SET counts = {count} WHERE user_id = {id_user}"
-        )
+        cursor.execute(f"UPDATE users SET counts = {count} WHERE user_id = {id_user}")
         logger.info("Изменил количество постов")
         connection.commit()
 
@@ -161,9 +145,7 @@ def get_count_posts(id_user: int) -> int:
     :return: Получает посты пользователя если они есть
     """
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT counts FROM users WHERE user_id = {id_user}"
-        )
+        cursor.execute(f"SELECT counts FROM users WHERE user_id = {id_user}")
         return cursor.fetchone()
 
 
@@ -186,7 +168,5 @@ def get_freq_day_seconds(id_user: int) -> str:
     :return: Получаем частоту отправки новостей
     """
     with connection.cursor() as cursor:
-        cursor.execute(
-            f"SELECT frequency FROM users WHERE user_id = {id_user}"
-        )
+        cursor.execute(f"SELECT frequency FROM users WHERE user_id = {id_user}")
         return cursor.fetchone()

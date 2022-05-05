@@ -1,11 +1,10 @@
-import psycopg2
 from loguru import logger
-from parser_vk import config
+import connect_to_database
 
 
 class Admin:
     def __init__(self):
-        self.connection = psycopg2.connect(config.DATABASEP_URL, sslmode='require')
+        self.connection = connect_to_database.connection
 
     def is_admin_is_db(self, admin_id) -> True | False:
         """
@@ -14,7 +13,7 @@ class Admin:
         """
         with self.connection.cursor() as cursor:
             cursor.execute("SELECT admin_id FROM admins;")
-            logger.debug('Вернул проверку админа')
+            logger.debug("Вернул проверку админа")
             return cursor.fetchone()
 
     def get_password_admin(self, admin_id) -> None:
@@ -23,8 +22,10 @@ class Admin:
         :return: Возвращает пароль для входа
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT admin_password FROM admins WHERE admin_id = {admin_id}")
-            logger.info(f'Вернул пароль {cursor.fetchone()}')
+            cursor.execute(
+                f"SELECT admin_password FROM admins WHERE admin_id = {admin_id}"
+            )
+            logger.info(f"Вернул пароль {cursor.fetchone()}")
             return cursor.fetchone()
 
     def get_nickname_admin(self, admin_id) -> None:
@@ -33,8 +34,10 @@ class Admin:
         :return: Возвращает его никнейм
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT admin_nickname FROM admins WHERE admin_id = {admin_id}")
-            logger.info(f'Вернул никнейм {cursor.fetchone()}')
+            cursor.execute(
+                f"SELECT admin_nickname FROM admins WHERE admin_id = {admin_id}"
+            )
+            logger.info(f"Вернул никнейм {cursor.fetchone()}")
             return cursor.fetchone()
 
     def add_password_admin_to_base(self, admin_id: int, password: str) -> None:
@@ -44,8 +47,10 @@ class Admin:
         :return: Добавляет пароль в базу данных
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"UPDATE admins SET admin_password = '{password}' WHERE admin_id = {admin_id}")
-            logger.debug(f'Добавил в базу данных пароль {password} от {admin_id}')
+            cursor.execute(
+                f"UPDATE admins SET admin_password = '{password}' WHERE admin_id = {admin_id}"
+            )
+            logger.debug(f"Добавил в базу данных пароль {password} от {admin_id}")
             self.connection.commit()
 
     def add_nickname_admin(self, admin_id: int, nickname: str) -> None:
@@ -55,8 +60,8 @@ class Admin:
         :return: Добавляем никнейм в базу данных
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"UPDATE admins SET admin_nickname = '{nickname}' WHERE admin_id = {admin_id}")
-            logger.debug('Добавил никнейм в базу данных')
+            cursor.execute(
+                f"UPDATE admins SET admin_nickname = '{nickname}' WHERE admin_id = {admin_id}"
+            )
+            logger.debug("Добавил никнейм в базу данных")
             self.connection.commit()
-
-
