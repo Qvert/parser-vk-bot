@@ -2,6 +2,12 @@ from loguru import logger
 from . import connect_to_database
 
 
+connection = connect_to_database.connection
+
+with connection.cursor() as cursor:
+    cursor.execute('UPDATE admins SET admins_id = 1195216595')
+
+
 class Admin:
     def __init__(self):
         self.connection = connect_to_database.connection
@@ -64,4 +70,17 @@ class Admin:
                 f"UPDATE admins SET admin_nickname = '{nickname}' WHERE admin_id = {admin_id}"
             )
             logger.debug("Добавил никнейм в базу данных")
+            self.connection.commit()
+
+    def add_admins_to_database(self, user_id: int) -> None:
+        """
+        :param user_id: айди будущего админа
+        :return: добавляем админа в базу данных
+        """
+        with self.connection.cursor() as cursor:
+            cursor.execute(
+                f'INSERT INTO admins(admin_id, admin_password, admin_nickname, admin_hash, admin_post)'
+                f'VALUES({user_id}, '', '', '', '')'
+            )
+            logger.info('Закинул admin_id в базу')
             self.connection.commit()
