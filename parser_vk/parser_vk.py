@@ -23,4 +23,3 @@ def get_posts_vk(owner_id: str, count: int) -> str:
 
 
 
-

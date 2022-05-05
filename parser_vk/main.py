@@ -2,6 +2,7 @@ from functools import wraps
 from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     CommandHandler,
+    ConversationHandler,
     Updater,
     MessageHandler,
     Filters,
@@ -22,8 +23,9 @@ from database.tools import *
 from database import admin_tools
 from tag_name import tag_names_dict
 import answer_options
+import validators
 from loguru import logger
-from flask import Flask, request
+from flask import Flask
 
 server = Flask(__name__)
 
@@ -234,11 +236,7 @@ def message_parse(context):
 @log_error
 def got_parse_mod(update, context):
     # Функция запуска парсера по времени
-    dict_freg_day = {
-        "one_three_day": 259200,
-        "one_week": 604800,
-        "one_day": 86400
-    }
+    dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 86400}
 
     var = get_freq_day_seconds(update.message.chat_id)[0]
 
@@ -254,39 +252,100 @@ def got_parse_mod(update, context):
 
 
 @log_error
+def registration_new_admin_nickname(update, context):
+    # Функция для регистраций никнейма нового администратора
+    nickname = update.message.text
+    db.add_nickname_admin(admin_id=update.effective_user.id, nickname=nickname)
+    update.message.reply_text(
+        'Ваш никнейм успешно сохранён'
+    )
+
+
+@log_error
+def registration_new_admin(update, context):
+    # Функция регистраций нового администратора
+    answer = validators.check_new_password(update.message.text, admin_id=update.effective_user.id)
+    if answer[0] == 0:
+        update.message.reply_text(
+            answer[1]
+        )
+        update.message.reply_text(
+            'Теперь придумайте себе никнейм и введите его пожалуйста'
+        )
+        return 'REGISTRATION_NEW_ADMIN_NICKNAME'
+
+    else:
+        update.message.reply_text(
+            answer
+        )
+        return 'REGISTRATION_NEW_ADMIN'
+
+
+@log_error
 def registration(update, context):
     # Функция регистраций администратора
-    if db.is_admin_is_db(admin_id=update.effective_user.id):
-        update.message.reply_text(
-            'Извините, но вы не зарегестрированы как администратор\n'
-            'Предлагаю вам пройти регистрацию'
-        )
-    else:
-        pass
+    logger.debug('Перенаправил на registration')
+
+    return 'REGISTRATION_NEW_ADMIN'
 
 
 @log_error
 def password(update, context):
     # Функция проверки временного пароля для входа
-
-    if update.message.text == "секрет":
+    logger.debug('Перенаправил на password')
+    if update.message.text == config.SECRET_KEY:
+        update.message.reply_text("Уникальный ключ подходит 😉")
         update.message.reply_text(
-            'Уникальный ключ подходит 😉'
+            "Извините, но вы не зарегестрированы как администратор\n"
+            "Предлагаю вам пройти регистрацию"
         )
-        return registration(update=update, context=context)
+        update.message.reply_text(
+            "Для начала создайте и введите пароль, которым вы будете пользоваться"
+        )
+        return 'REGISTRATION'
+    else:
+        update.message.reply_text("😮 Прошу прощения, но ключ неверный 😮")
+        return 'PASSWORD'
+
+
+@log_error
+def password_check_if_admin(update, context):
+    # Функция проверки авторизаций для админа который был зарегестрирован
+    if update.message.text.split()[0] == db.get_password_admin(
+        admin_id=update.effective_user.id
+    ) and update.message.text.split()[1] == db.get_nickname_admin(
+        admin_id=update.effective_user.id
+    ):
+        update.message.reply_text("Поздравляю, вы успешно авторизовались.")
     else:
         update.message.reply_text(
-            '😮 Прошу прощения, но ключ неверный 😮'
+            'Простите, но вы неправильно ввели данные. Проверьте пожалуйста.'
         )
 
 
 @log_error
 def admin(update, context):
     # Функция приветствия будущего админа
+    if db.is_admin_is_db(admin_id=update.effective_user.id) != update.effective_user.id:
+        update.message.reply_text(
+            "😑 Вы хотите войти как администратор. 😑\n"
+            "Для начала введите пожалуйста пароль,\n"
+            "который был выдан вам для безопасности от других пользователей."
+        )
+        return 'PASSWORD'
+    else:
+        update.message.reply_text(
+            "Вы уже являетесь администратором.\n"
+            "Для проверки, пожалуйста авторизуйтесь.\n"
+            "Введите через пробел сначала пароль, потом ваш никнейм"
+        )
+        return password_check_if_admin(update=update, context=context)
+
+
+@log_error
+def commands_admins(update, context):
     update.message.reply_text(
-        "😑 Вы хотите войти как администратор. 😑\n"
-        "Для этого введите пожалуйста пароль,\n"
-        "который был выдан вам для безопасности от других пользователей."
+        'Здесь в будущем появятся команды!!!!'
     )
 
 
@@ -295,6 +354,17 @@ dis = update.dispatcher
 job_queue = JobQueue()
 job_queue.set_dispatcher(dis)
 
+conv_handler = ConversationHandler(
+    entry_points=[CommandHandler("admin", admin)],
+    states={
+        'PASSWORD': [MessageHandler(Filters.text, password)],
+        'REGISTRATION': [MessageHandler(Filters.text, registration)],
+        'REGISTRATION_NEW_ADMIN': [MessageHandler(Filters.text, registration_new_admin)],
+        'REGISTRATION_NEW_ADMIN_NICKNAME': [MessageHandler(Filters.text, registration_new_admin_nickname)]
+    },
+    fallbacks=[CommandHandler('cancel', commands_admins)],
+)
+dis.add_handler(conv_handler)
 dis.add_handler(CommandHandler("admin", admin))
 dis.add_handler(CommandHandler("help", helping))
 dis.add_handler(CommandHandler("start", start))
@@ -303,7 +373,7 @@ dis.add_handler(CommandHandler("choice", choice))
 dis.add_handler(CommandHandler("frequency", frequency))
 dis.add_handler(CommandHandler("start_parser", got_parse_mod, pass_job_queue=True))
 dis.add_handler(CommandHandler("view", view_fag))
-dis.add_handler(MessageHandler(Filters.text, password))
+
 dis.add_handler(MessageHandler(Filters.text, answer_count))
 dis.add_handler(CallbackQueryHandler(callback=button, pass_chat_data=True))
 
