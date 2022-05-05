@@ -4,9 +4,6 @@ from . import connect_to_database
 
 connection = connect_to_database.connection
 
-with connection.cursor() as cursor:
-    cursor.execute('UPDATE admins SET admins_id = 1195216595')
-
 
 class Admin:
     def __init__(self):
@@ -80,7 +77,7 @@ class Admin:
         with self.connection.cursor() as cursor:
             cursor.execute(
                 f'INSERT INTO admins(admin_id, admin_password, admin_nickname, admin_hash, admin_post)'
-                f'VALUES({user_id}, '', '', '', '')'
+                f' VALUES({user_id}, '', '', '', '');'
             )
             logger.info('Закинул admin_id в базу')
             self.connection.commit()
