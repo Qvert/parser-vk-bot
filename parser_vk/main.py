@@ -32,7 +32,7 @@ server = Flask(__name__)
 
 # Подключение клавиатур и базы данных админа
 db = Database()
-db = Admin()
+db_admin = Admin()
 key_board_starting = InlineKeyboardMarkup(key_board_start)
 back_key = InlineKeyboardMarkup(back_key)
 key_board_choice = InlineKeyboardMarkup(key_board_choice)
@@ -257,7 +257,7 @@ def got_parse_mod(update, context):
 def registration_new_admin_nickname(update, context):
     # Функция для регистраций никнейма нового администратора
     nickname = update.message.text
-    db.add_nickname_admin(admin_id=update.effective_user.id, nickname=nickname)
+    db_admin.add_nickname_admin(admin_id=update.effective_user.id, nickname=nickname)
     update.message.reply_text("Ваш никнейм успешно сохранён")
 
 
@@ -286,7 +286,7 @@ def password(update, context):
     if update.message.text == config.SECRET_KEY:
         update.message.reply_text("Уникальный ключ подходит 😉")
         update.message.reply_text(
-            "Извините, но вы не зарегестрированы как администратор\n"
+            "Извините, но вы не зарегистрированы как администратор\n"
             "Предлагаю вам пройти регистрацию"
         )
         update.message.reply_text(
@@ -301,9 +301,9 @@ def password(update, context):
 @log_error
 def password_check_if_admin(update, context):
     # Функция проверки авторизаций для админа который был зарегестрирован
-    if update.message.text.split()[0] == db.get_password_admin(
+    if update.message.text.split()[0] == db_admin.get_password_admin(
         admin_id=update.effective_user.id
-    ) and update.message.text.split()[1] == db.get_nickname_admin(
+    ) and update.message.text.split()[1] == db_admin.get_nickname_admin(
         admin_id=update.effective_user.id
     ):
         update.message.reply_text("Поздравляю, вы успешно авторизовались.")
@@ -316,7 +316,7 @@ def password_check_if_admin(update, context):
 @log_error
 def admin(update, context):
     # Функция приветствия будущего админа
-    if db.is_admin_is_db(admin_id=update.effective_user.id) != update.effective_user.id:
+    if db_admin.is_admin_is_db(admin_id=update.effective_user.id) != update.effective_user.id:
         update.message.reply_text(
             "😑 Вы хотите войти как администратор. 😑\n"
             "Для начала введите пожалуйста пароль,\n"

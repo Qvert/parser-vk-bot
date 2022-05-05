@@ -1,41 +1,41 @@
 from loguru import logger
-import connect_to_database
+from . import connect_to_database
 
 
 class Admin:
     def __init__(self):
         self.connection = connect_to_database.connection
 
-    def is_admin_is_db(self, admin_id) -> True | False:
+    def is_admin_is_db(self, admin_id: int) -> True | False:
         """
         :param admin_id: Айди админимстратора
         :return: Возвращаем True или False в зависимости от того, есть ли админ в базе
         """
         with self.connection.cursor() as cursor:
-            cursor.execute("SELECT admin_id FROM admins;")
+            cursor.execute(f"SELECT admin_id FROM admins WHERE admin_id = {admin_id};")
             logger.debug("Вернул проверку админа")
             return cursor.fetchone()
 
-    def get_password_admin(self, admin_id) -> None:
+    def get_password_admin(self, admin_id: int) -> None:
         """
         :param admin_id: Айди администратора
         :return: Возвращает пароль для входа
         """
         with self.connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT admin_password FROM admins WHERE admin_id = {admin_id}"
+                f"SELECT admin_password FROM admins WHERE admin_id = {admin_id};"
             )
             logger.info(f"Вернул пароль {cursor.fetchone()}")
             return cursor.fetchone()
 
-    def get_nickname_admin(self, admin_id) -> None:
+    def get_nickname_admin(self, admin_id: int) -> None:
         """
         :param admin_id: Айди администратора
         :return: Возвращает его никнейм
         """
         with self.connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT admin_nickname FROM admins WHERE admin_id = {admin_id}"
+                f"SELECT admin_nickname FROM admins WHERE admin_id = {admin_id};"
             )
             logger.info(f"Вернул никнейм {cursor.fetchone()}")
             return cursor.fetchone()

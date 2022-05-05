@@ -7,6 +7,7 @@ db = admin_tools.Admin()
 # Функций валидаций введённых данных
 def check_new_password(password, admin_id):
     """
+    :param admin_id: Айди администратора
     :param password: Переданный пароль от пользователя
     :return: возвращаем результат проверки
     """
@@ -23,5 +24,5 @@ def check_new_password(password, admin_id):
         return ""
 
     else:
-        db.add_password_admin_to_base(password=password, admin_id=admin_id)
+        db.add_password_admin_to_base(admin_id=admin_id, password=password)
         return [0, "Ваш пароль прошёл проверку и был внесён в базу данных"]

@@ -1,5 +1,5 @@
 from loguru import logger
-import connect_to_database
+from . import connect_to_database
 
 
 class Database:
