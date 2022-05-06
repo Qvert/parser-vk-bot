@@ -312,9 +312,11 @@ def password(update, context):
 def password_check_if_admin(update, context):
     # Функция проверки авторизаций для админа который был зарегестрирован
     try:
-        text_check = update.message.text.split
+        text_check = update.message.text.split()
+        logger.info(f'Пароль и никнейм введёный пользователем {text_check}')
         user_id = update.effective_user.id
         db_password_nickname = db_admin.get_password_nickname_admin(admin_id=user_id)
+        logger.info(f'Пароль и никнейм из базы {db_password_nickname}')
 
         if (
             db_password_nickname[0] == text_check[0]

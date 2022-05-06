@@ -17,7 +17,7 @@ class Admin:
         with self.connection.cursor() as cursor:
             cursor.execute(f"SELECT admin_id FROM admins WHERE admin_id = {admin_id};")
             logger.debug("Вернул проверку админа")
-            return cursor.fetchone()
+            return cursor.fetchone()[0]
 
     def get_password_nickname_admin(self, admin_id: int) -> str:
         """
