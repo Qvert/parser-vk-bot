@@ -19,28 +19,16 @@ class Admin:
             logger.debug("Вернул проверку админа")
             return cursor.fetchone()
 
-    def get_password_admin(self, admin_id: int) -> None:
+    def get_password_nickname_admin(self, admin_id: int) -> str:
         """
         :param admin_id: Айди администратора
         :return: Возвращает пароль для входа
         """
         with self.connection.cursor() as cursor:
             cursor.execute(
-                f"SELECT admin_password FROM admins WHERE admin_id = {admin_id};"
+                f"SELECT admin_password, admin_nickname FROM admins WHERE admin_id = {admin_id};"
             )
-            logger.info(f"Вернул пароль {cursor.fetchone()}")
-            return cursor.fetchone()
-
-    def get_nickname_admin(self, admin_id: int) -> None:
-        """
-        :param admin_id: Айди администратора
-        :return: Возвращает его никнейм
-        """
-        with self.connection.cursor() as cursor:
-            cursor.execute(
-                f"SELECT admin_nickname FROM admins WHERE admin_id = {admin_id};"
-            )
-            logger.info(f"Вернул никнейм {cursor.fetchone()}")
+            logger.info(f"Вернул пароль {cursor.fetchone()[0]} и никнейи {cursor.fetchone()[1]}")
             return cursor.fetchone()
 
     def add_password_admin_to_base(self, admin_id: int, password: str) -> None:
@@ -76,8 +64,8 @@ class Admin:
         """
         with self.connection.cursor() as cursor:
             cursor.execute(
-                f'INSERT INTO admins(admin_id, admin_password, admin_nickname, admin_hash, admin_post)'
-                f' VALUES({user_id}, '', '', '', '');'
+                f"INSERT INTO admins(admin_id, admin_password, admin_nickname, admin_hash, admin_post)"
+                f"VALUES({user_id}, '', '', '', '');"
             )
             logger.info('Закинул admin_id в базу')
             self.connection.commit()

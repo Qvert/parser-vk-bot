@@ -18,7 +18,7 @@ from key_board import (
     key_board_count,
     keyboard_frequency,
 )
-from parser_vk import get_posts_vk
+import parser_vk
 from database.tools import Database
 from database.admin_tools import Admin
 from tag_name import tag_names_dict
@@ -100,7 +100,9 @@ def button(update, context):
 
     # Если пользователь нажал подписаться
     if variant == "subscribe":
-        if not db.checked_hash_tag(tag_hash=context.user_data["HASH"], id_users=id_user):
+        if not db.checked_hash_tag(
+            tag_hash=context.user_data["HASH"], id_users=id_user
+        ):
             db.add_hash_tag(context.user_data["HASH"], id_user)
             query.edit_message_text(answer_options.get_answer_subscribe())
         else:
@@ -157,7 +159,9 @@ def answer_count(update: Updater, context: CallbackContext):
         update.message.reply_text(
             "Я принял ваш ответ😁😁😁\n", reply_markup=ReplyKeyboardRemove()
         )
-        logger.info(f"Записал количество постов {(count := db.get_count_posts(id_user))}")
+        logger.info(
+            f"Записал количество постов {(count := db.get_count_posts(id_user))}"
+        )
 
 
 @log_error
@@ -224,7 +228,7 @@ def message_parse(context):
             f"Информация перед парсингом посты: {count[0]} список хэш: {spisok_tag}"
         )
         for elem in spisok_tag:
-            dict_posts = get_posts_vk(tag_names_dict[elem], count)
+            dict_posts = parser_vk.get_posts_vk(tag_names_dict[elem], count)
             context.bot.send_message(
                 chat_id=context.job.context,
                 text=f"👇👇👇 Ниже новости постов хэштега {elem} 👇👇",
@@ -260,9 +264,9 @@ def registration_new_admin_nickname(update, context):
     db_admin.add_nickname_admin(admin_id=update.effective_user.id, nickname=nickname)
     update.message.reply_text("Ваш никнейм успешно сохранён")
     update.message.reply_text(
-        'Вход выполнен от имени администратора и вам доступны две функций\n'
-        'Расширение списка новостных групп\n'
-        'Расширение списка хэштегов'
+        "Вход выполнен от имени администратора и вам доступны две функций\n"
+        "Расширение списка новостных групп\n"
+        "Расширение списка хэштегов"
     )
     return ConversationHandler.END
 
@@ -307,22 +311,31 @@ def password(update, context):
 @log_error
 def password_check_if_admin(update, context):
     # Функция проверки авторизаций для админа который был зарегестрирован
-    if update.message.text.split()[0] == db_admin.get_password_admin(
-        admin_id=update.effective_user.id
-    ) and update.message.text.split()[1] == db_admin.get_nickname_admin(
-        admin_id=update.effective_user.id
-    ):
-        update.message.reply_text("Поздравляю, вы успешно авторизовались.")
-    else:
-        update.message.reply_text(
-            "Простите, но вы неправильно ввели данные. Проверьте пожалуйста."
-        )
+    try:
+        text_check = update.message.text.split
+        user_id = update.effective_user.id
+        db_password_nickname = db_admin.get_password_nickname_admin(admin_id=user_id)
+
+        if (
+            db_password_nickname[0] == text_check[0]
+            and db_password_nickname[1] == text_check[1]
+        ):
+            update.message.reply_text("Поздравляю, вы успешно авторизовались.")
+        else:
+            update.message.reply_text(
+                "Простите, но вы неправильно ввели данные. Проверьте пожалуйста."
+            )
+    except Exception as _er:
+        logger.error(_er)
 
 
 @log_error
 def admin(update, context):
     # Функция приветствия будущего админа
-    if db_admin.is_admin_is_db(admin_id=update.effective_user.id) != update.effective_user.id:
+    if (
+        db_admin.is_admin_is_db(admin_id=update.effective_user.id)
+        != update.effective_user.id
+    ):
         update.message.reply_text(
             "😑 Вы хотите войти как администратор. 😑\n"
             "Для начала введите пожалуйста пароль,\n"
@@ -335,7 +348,7 @@ def admin(update, context):
             "Для проверки, пожалуйста авторизуйтесь.\n"
             "Введите через пробел сначала пароль, потом ваш никнейм"
         )
-        return password_check_if_admin(update=update, context=context)
+        return "PASSWORD_CHECH_IF_ADMIN"
 
 
 @log_error
@@ -357,6 +370,9 @@ conv_handler = ConversationHandler(
         ],
         "REGISTRATION_NEW_ADMIN_NICKNAME": [
             MessageHandler(Filters.text, registration_new_admin_nickname)
+        ],
+        "PASSWORD_CHECH_IF_ADMIN": [
+            MessageHandler(Filters.text, password_check_if_admin)
         ],
     },
     fallbacks=[CommandHandler("cancel", commands_admins)],

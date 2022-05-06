@@ -7,3 +7,7 @@ python-telegram-bot==13.11
 requests==2.27.1
 schedule==1.1.0
 
+
+loguru~=0.6.0
+Flask~=2.1.2
+vk~=2.0.2
