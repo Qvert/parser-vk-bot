@@ -28,7 +28,7 @@ class Admin:
             cursor.execute(
                 f"SELECT admin_password, admin_nickname FROM admins WHERE admin_id = {admin_id};"
             )
-            logger.info(f"Вернул пароль {cursor.fetchone()[0]} и никнейи {cursor.fetchone()[1]}")
+            # logger.info(f"Вернул пароль {cursor.fetchone()[0]} и никнейи {cursor.fetchone()[1]}")
             return cursor.fetchone()
 
     def add_password_admin_to_base(self, admin_id: int, password: str) -> None:

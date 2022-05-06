@@ -323,10 +323,12 @@ def password_check_if_admin(update, context):
             and db_password_nickname[1] == text_check[1]
         ):
             update.message.reply_text("Поздравляю, вы успешно авторизовались.")
+            return ConversationHandler.END
         else:
             update.message.reply_text(
                 "Простите, но вы неправильно ввели данные. Проверьте пожалуйста."
             )
+            return "PASSWORD_CHECK_IF_ADMIN"
     except Exception as _er:
         logger.error(_er)
 
@@ -350,7 +352,7 @@ def admin(update, context):
             "Для проверки, пожалуйста авторизуйтесь.\n"
             "Введите через пробел сначала пароль, потом ваш никнейм"
         )
-        return "PASSWORD_CHECH_IF_ADMIN"
+        return "PASSWORD_CHECK_IF_ADMIN"
 
 
 @log_error
@@ -373,7 +375,7 @@ conv_handler = ConversationHandler(
         "REGISTRATION_NEW_ADMIN_NICKNAME": [
             MessageHandler(Filters.text, registration_new_admin_nickname)
         ],
-        "PASSWORD_CHECH_IF_ADMIN": [
+        "PASSWORD_CHECK_IF_ADMIN": [
             MessageHandler(Filters.text, password_check_if_admin)
         ],
     },
