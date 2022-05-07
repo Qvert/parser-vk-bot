@@ -12,4 +12,4 @@ DATABASEP_URL = "postgres://fjlpfazmrgmrrd:bcda205baf43a9f8cc491e9b828364fb26ecc
 
 API_URL = "https://parser-vk-bot-it.herokuapp.com/" + BOT_TOKEN
 
-SECRET_KEY = "я хз"
+SECRET_KEY = "биба"
