@@ -1,1 +1,1 @@
-bot: python parser_vk/main.py
+worker: python parser_vk/main.py
