@@ -115,7 +115,7 @@ class Database:
         :return: Возвращаем True или False в зависимости от того, подписан ли хоть на что-то пользователь
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT hash_tag FROM users WHERE user_id = '{id_users}'")
+            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = '{id_users}'")
             check = list(cursor.fetchone())
             logger.info(f'Получен хэштег "{check}"')
             if check == "":
@@ -144,6 +144,7 @@ class Database:
 
     def update_freq_day(self, callback_freq: str, id_user: str) -> None:
         """
+        :param callback_freq: Частота отправки сообщений
         :param id_user: Айдишник пользователя
         :return: Заносим в базу данных частоту отправки
         """

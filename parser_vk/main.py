@@ -232,7 +232,7 @@ def message_parse(context):
             f"Информация перед парсингом посты: {count[0]} список хэш: {spisok_tag}"
         )
         for elem in spisok_tag:
-            dict_posts = parser_vk.get_posts_vk(tag_names_dict[elem], count)
+            dict_posts = parser_vk.get_posts_vk(elem, count)
             context.bot.send_message(
                 chat_id=context.job.context,
                 text=f"👇👇 Ниже новости постов хэштега {elem} 👇👇",
@@ -247,7 +247,7 @@ def message_parse(context):
 def got_parse_mod(update, context):
     # Функция запуска парсера по времени
     # 259200 604800 86400
-    dict_freg_day = {"one_three_day": 100, "one_week": 170, "one_day": 86400}
+    dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 86400}
 
     var = db.get_freq_day_seconds(id_user := hash_word(str(update.message.chat_id)))[0]
 
