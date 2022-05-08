@@ -139,7 +139,7 @@ def start(update: Updater, _):
         "новости из групп вк. Для того чтобы узнать\n"
         "как мной пользоваться нажми /help\n"
     )
-    id_hash = hash_word(id_user := str(update.effective_user.id))
+    id_hash = hash_word(str(update.effective_user.id))
     if db.user_exists(id_hash) is None:
         db.add_users(id_hash)
     else:
@@ -198,7 +198,7 @@ def view_fag(update, _):
 def message_parse(context):
     id_users = hash_word(str(context.job.context))
 
-    if not db.get_count_posts(id_users)[0]:
+    if not db.get_count_posts(id_users):
         db.update_count_posts(count=1, id_user=id_users)
 
     if not db.if_hash_tag_in_db(id_users):
@@ -208,7 +208,7 @@ def message_parse(context):
             "Если желаете подписаться то нажмите /choice",
         )
     else:
-        count = db.get_count_posts(id_users)[0]  # Количество постов показываемых ботом
+        count = db.get_count_posts(id_users)  # Количество постов показываемых ботом
         list_tag = db.get_spisok_hash_tag(
             id_users
         )  # Список хэштегов которые нужно выводить
@@ -318,9 +318,9 @@ def password_check_if_admin(update, _):
         ):
             update.message.reply_text(f'Приветствую вас {text_check[1]}')
             update.message.reply_text(
-                "Расширение списка новостных групп: \n"
-                "Расширение списка хэштегов: \n"
-                "Удаление хэштега и названия мероприятия: "
+                "Расширение списка новостных групп: /add_news\n"
+                "Расширение списка хэштегов: /add_hash\n"
+                "Удаление хэштега и названия мероприятия: /delete_news"
             )
             return ConversationHandler.END
         else:
@@ -346,7 +346,7 @@ def admin(update):
         return "PASSWORD"
     else:
         update.message.reply_text(
-            "Вы уже являетесь администратором.\n"
+            "👨‍💻 Вы уже являетесь администратором. 👨‍💻\n"
             "Для проверки, пожалуйста авторизуйтесь.\n"
             "Введите через пробел сначала пароль, потом ваш никнейм"
         )
@@ -380,9 +380,7 @@ def main():
         },
         fallbacks=[CommandHandler("cancel", commands_admins)],
     )
-    '''conv_hundler_commands = ConversationHandler(
-        entry_points=[CommandHandler()]
-    )'''
+
     dis.add_handler(conv_handler)
     dis.add_handler(CommandHandler("admin", admin))
     dis.add_handler(CommandHandler("help", helping))

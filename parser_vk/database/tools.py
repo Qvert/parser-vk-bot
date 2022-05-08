@@ -140,7 +140,7 @@ class Database:
         """
         with self.connection.cursor() as cursor:
             cursor.execute(f"SELECT counts FROM users WHERE user_id = '{id_user}'")
-            return cursor.fetchone()
+            return cursor.fetchone()[0]
 
     def update_freq_day(self, callback_freq: str, id_user: str) -> None:
         """
