@@ -10,22 +10,6 @@ key_board_start = [
 # Клавиатура возвращающая назад
 back_key = [[InlineKeyboardButton("<-- Вернуться", callback_data="exit")]]
 
-# Клавиатура для выбора мероприятия
-key_board_choice = [
-    [
-        InlineKeyboardButton("#TechnoCom", callback_data="#TechnoCom"),
-        InlineKeyboardButton("#IT-fest_2022", callback_data="#IT_fest_2022"),
-    ],
-    [
-        InlineKeyboardButton("#IASF2022", callback_data="#IASF2022"),
-        InlineKeyboardButton("#ФестивальОКК", callback_data="#ФестивальОКК"),
-    ],
-    [
-        InlineKeyboardButton("#Нейрофест", callback_data="#Нейрофест"),
-        InlineKeyboardButton("#НевидимыйМир", callback_data="#НевидимыйМир"),
-    ],
-    [InlineKeyboardButton("#КонкурсНИР", callback_data="#КонкурсНИР")],
-]
 
 # Клавиатура для подписки и отписки на мероприятие
 keyboard_sub_unsub = [
@@ -47,3 +31,16 @@ keyboard_frequency = [
         InlineKeyboardButton("Раз в неделю", callback_data="one_week"),
     ]
 ]
+
+
+# Функция для генераций клавиатуры в зависимости от количества хэштегов
+def generation_key_board(list_hash: list) -> list:
+    """
+    :param list_hash: Список хэштегов
+    :return: Возвращаем сгенерированную клавиатуру
+    """
+    key_board_choice = []
+    for elem in list_hash:
+        key_board_choice.append([InlineKeyboardButton(elem, callback_data=elem)])
+    return key_board_choice
+

@@ -24,6 +24,9 @@ def check_new_password(password, admin_id):
     elif password is None:
         return ""
 
+    elif len(password.split()) != 1:
+        return "Извините, пароль не должен содержать пробелов"
+
     else:
         db.add_admins_to_database(user_id=admin_id)
         db.add_password_admin_to_base(admin_id=admin_id, password=hash_word(password))

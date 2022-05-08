@@ -6,14 +6,13 @@ from telegram.ext import (
     Updater,
     MessageHandler,
     Filters,
-    CallbackContext,
     JobQueue,
 )
 from telegram.ext import CallbackQueryHandler
 from key_board import (
     key_board_start,
     back_key,
-    key_board_choice,
+    generation_key_board,
     keyboard_sub_unsub,
     key_board_count,
     keyboard_frequency,
@@ -21,7 +20,7 @@ from key_board import (
 import parser_vk
 from database.tools import Database
 from database.admin_tools import Admin
-from tag_name import tag_names_dict
+from tag_name import tag_name_list, generation_list_news, list_name_news
 import answer_options
 import validators
 import config
@@ -34,7 +33,7 @@ db = Database()
 db_admin = Admin()
 key_board_starting = InlineKeyboardMarkup(key_board_start)
 back_key = InlineKeyboardMarkup(back_key)
-key_board_choice = InlineKeyboardMarkup(key_board_choice)
+key_board_choice = InlineKeyboardMarkup(generation_key_board(tag_name_list))
 keyboard_sub_unsub = InlineKeyboardMarkup(keyboard_sub_unsub)
 key_board_count = ReplyKeyboardMarkup(key_board_count, one_time_keyboard=True)
 keyboard_frequency = InlineKeyboardMarkup(keyboard_frequency)
@@ -80,21 +79,14 @@ def button(update, context):
             reply_markup=key_board_starting,
     )
 
-    if variant in tag_names_dict.keys():
+    if variant in tag_name_list:
         context.user_data["HASH"] = variant
         query.edit_message_text(variant, reply_markup=keyboard_sub_unsub)
         logger.info(f'Получил {context.user_data["HASH"]}')
 
     if variant == "back":
         query.edit_message_text(
-            "👇Ниже список мероприятий👇\n"
-            "1.Международный конкурс детских инженерных команд: #TechnoCom\n"
-            "2.Международный фестиваль информационных технологий «ITфест»: #IT_fest_2022\n"
-            "3.Международный аэрокосмический фестиваль: #IASF2022\n"
-            "4.Всероссийский фестиваль общекультурных компетенций: #ФестивальОКК\n"
-            "5.Всероссийский фестиваль нейротехнологий «Нейрофест»: #Нейрофест\n"
-            "6.Всероссийский конкурс по микробиологии «Невидимый мир: #НевидимыйМир\n"
-            "7.Всероссийский конкурс научноисследовательских работ: #КонкурсНИР",
+            generation_list_news(tag_name=tag_name_list, news_list=list_name_news),
             reply_markup=key_board_choice,
         )
 
@@ -124,7 +116,7 @@ def button(update, context):
 
 
 @log_error
-def helping(update: Updater, context: CallbackContext):
+def helping(update: Updater, _):
     """
     Функция для предоставления справки по пользованию ботом
     """
@@ -141,7 +133,7 @@ def helping(update: Updater, context: CallbackContext):
 
 
 @log_error
-def start(update: Updater, context: CallbackContext):
+def start(update: Updater, _):
     update.message.reply_text(
         "Приветствую тебя 😋, я бот-парсер, который соберёт\n"
         "новости из групп вк. Для того чтобы узнать\n"
@@ -155,7 +147,7 @@ def start(update: Updater, context: CallbackContext):
 
 
 @log_error
-def answer_count(update: Updater, context: CallbackContext):
+def answer_count(update: Updater, _):
     id_user = hash_word(str(update.effective_user.id))
     if update.message.text in "12345678910":
         db.update_count_posts(count=update.message.text, id_user=id_user)
@@ -163,12 +155,12 @@ def answer_count(update: Updater, context: CallbackContext):
             "Я принял ваш ответ😁😁😁\n", reply_markup=ReplyKeyboardRemove()
         )
         logger.info(
-            f"Записал количество постов {(count := db.get_count_posts(id_user))}"
+            f"Записал количество постов {(db.get_count_posts(id_user))}"
         )
 
 
 @log_error
-def count(update: Updater, context: CallbackContext):
+def count(update: Updater, _):
     update.message.reply_text(
         "Выберите количество получаемых постов из новостей группы вк 👇👇👇",
         reply_markup=key_board_count,
@@ -176,29 +168,22 @@ def count(update: Updater, context: CallbackContext):
 
 
 @log_error
-def choice(update: Updater, context: CallbackContext):
+def choice(update: Updater, _):
     update.message.reply_text(
-        "👇Ниже список мероприятий👇\n"
-        "1.Международный конкурс детских инженерных команд: #TechnoCom\n"
-        "2.Международный фестиваль информационных технологий «ITфест»: #IT_fest_2022\n"
-        "3.Международный аэрокосмический фестиваль: #IASF2022\n"
-        "4.Всероссийский фестиваль общекультурных компетенций: #ФестивальОКК\n"
-        "5.Всероссийский фестиваль нейротехнологий «Нейрофест»: #Нейрофест\n"
-        "6.Всероссийский конкурс по микробиологии «Невидимый мир: #НевидимыйМир\n"
-        "7.Всероссийский конкурс научноисследовательских работ: #КонкурсНИР",
+        generation_list_news(tag_name=tag_name_list, news_list=list_name_news),
         reply_markup=key_board_choice,
     )
 
 
 @log_error
-def frequency(update: Updater, context: CallbackContext):
+def frequency(update: Updater, _):
     update.message.reply_text(
         "Выберите частоту отправки сообщений", reply_markup=keyboard_frequency
     )
 
 
 @log_error
-def view_fag(update, context):
+def view_fag(update, _):
     id_user = hash_word(str(update.message.chat_id))
     if db.get_spisok_hash_tag(id_user) is not None:
         update.message.reply_text(
@@ -223,15 +208,15 @@ def message_parse(context):
             "Если желаете подписаться то нажмите /choice",
         )
     else:
-        count = db.get_count_posts(id_users)  # Количество постов показываемых ботом
-        spisok_tag = db.get_spisok_hash_tag(
+        count = db.get_count_posts(id_users)[0]  # Количество постов показываемых ботом
+        list_tag = db.get_spisok_hash_tag(
             id_users
         )  # Список хэштегов которые нужно выводить
 
         logger.info(
-            f"Информация перед парсингом посты: {count[0]} список хэш: {spisok_tag}"
+            f"Информация перед парсингом посты: {count} список хэш: {list_tag}"
         )
-        for elem in spisok_tag:
+        for elem in list_tag:
             dict_posts = parser_vk.get_posts_vk(elem, count)
             context.bot.send_message(
                 chat_id=context.job.context,
@@ -263,7 +248,7 @@ def got_parse_mod(update, context):
 
 
 @log_error
-def registration_new_admin_nickname(update, context):
+def registration_new_admin_nickname(update, _):
     # Функция для регистраций никнейма нового администратора
     nickname = update.message.text
     id_user = hash_word(str(update.effective_user.id))
@@ -279,7 +264,7 @@ def registration_new_admin_nickname(update, context):
 
 
 @log_error
-def registration_new_admin(update, context):
+def registration_new_admin(update, _):
     # Функция регистраций нового администратора
     id_user = hash_word(str(update.effective_user.id))
     answer = validators.check_new_password(
@@ -298,7 +283,7 @@ def registration_new_admin(update, context):
 
 
 @log_error
-def password(update, context):
+def password(update, _):
     # Функция проверки временного пароля для входа
     logger.debug("Перенаправил на password")
     if update.message.text == config.SECRET_KEY:
@@ -317,7 +302,7 @@ def password(update, context):
 
 
 @log_error
-def password_check_if_admin(update, context):
+def password_check_if_admin(update, _):
     # Функция проверки авторизаций для админа который был зарегестрирован
     try:
         text_check = update.message.text.split()
@@ -348,7 +333,7 @@ def password_check_if_admin(update, context):
 
 
 @log_error
-def admin(update, context):
+def admin(update):
     # Функция приветствия будущего админа
     id_user = hash_word(str(update.effective_user.id))
 
@@ -369,7 +354,7 @@ def admin(update, context):
 
 
 @log_error
-def commands_admins(update, context):
+def commands_admins(update):
     update.message.reply_text("Здесь в будущем появятся команды!!!!")
 
 
