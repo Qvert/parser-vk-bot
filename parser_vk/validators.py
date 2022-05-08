@@ -1,5 +1,6 @@
 import re
 from database import admin_tools
+from hash_function import hash_word
 
 db = admin_tools.Admin()
 
@@ -25,5 +26,5 @@ def check_new_password(password, admin_id):
 
     else:
         db.add_admins_to_database(user_id=admin_id)
-        db.add_password_admin_to_base(admin_id=admin_id, password=password)
+        db.add_password_admin_to_base(admin_id=admin_id, password=hash_word(password))
         return [0, "Ваш пароль прошёл проверку и был внесён в базу данных"]

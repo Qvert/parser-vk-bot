@@ -6,28 +6,28 @@ class Database:
     def __init__(self):
         self.connection = connect_to_database.connection
 
-    def user_exists(self, user_id: int) -> True | False:
+    def user_exists(self, user_id: str) -> True | False:
         """
         :param user_id: Айдишник пользователя
         :return: Возвращает значени True или False в заваисимости от того есть ли user в базе данных
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT user_id FROM users WHERE user_id = {user_id};")
+            cursor.execute(f"SELECT user_id FROM users WHERE user_id = '{user_id}';")
             return cursor.fetchone()
 
-    def add_users(self, user_id: int) -> None:
+    def add_users(self, user_id: str) -> None:
         """
         :param user_id: Айдишник пользователя
         :return: Добавляет пользователя в базу данных
         """
         with self.connection.cursor() as cursor:
             cursor.execute(
-                f"INSERT INTO users(user_id, hashtags, counts, frequency) VALUES({user_id}, '', 1, 'one_day');"
+                f"INSERT INTO users(user_id, hashtags, counts, frequency) VALUES('{user_id}', '', 1, 'one_day');"
             )
             self.connection.commit()
             logger.info(f"Добавил пользователя {user_id} в базу")
 
-    def checked_hash_tag(self, tag_hash: str, id_users: int) -> True | False:
+    def checked_hash_tag(self, tag_hash: str, id_users: str) -> True | False:
         """
         :param tag_hash: Хэштег постов
         :param id_users: Айдишник пользователя
@@ -35,7 +35,7 @@ class Database:
         """
         with self.connection.cursor() as cursor:
             logger.info(f"Хэштег {tag_hash} получен с {id_users}")
-            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {id_users};")
+            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = '{id_users}';")
             check_word = cursor.fetchone()[0]
             logger.debug(f"check = {check_word}")
 
@@ -52,7 +52,7 @@ class Database:
                         return True
         return False
 
-    def add_hash_tag(self, tag_hash: str, id_users: int) -> None:
+    def add_hash_tag(self, tag_hash: str, id_users: str) -> None:
         """
         :param id_users: Айди пользователя
         :param tag_hash: Хэштег, который нужно добавить
@@ -60,7 +60,7 @@ class Database:
         """
         with self.connection.cursor() as cursor:
             spisok_word = list()
-            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {id_users};")
+            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = '{id_users}';")
             spisok_hash = cursor.fetchone()
             if spisok_hash is not None:
                 for elem in list(spisok_hash):
@@ -71,19 +71,19 @@ class Database:
             spisok_word.append(tag_hash)
             stroka_spis = ",".join(spisok_word)
             cursor.execute(
-                f"UPDATE users SET hashtags = '{stroka_spis}' WHERE user_id = {id_users};"
+                f"UPDATE users SET hashtags = '{stroka_spis}' WHERE user_id = '{id_users}';"
             )
             self.connection.commit()
-            logger.info(f"Добавил {tag_hash} пользователю под id: {id_users}")
+            logger.info(f"Добавил {tag_hash} пользователю под id: '{id_users}'")
 
-    def delete_hash_tag(self, tag_hash: str, user_id: int) -> None:
+    def delete_hash_tag(self, tag_hash: str, user_id: str) -> None:
         """
         :param user_id: Айдишник
         :param tag_hash: Хэштег, который выбрал пользователь
         :return: Удаляем (отписываемся) от новостей группы
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {user_id};")
+            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = '{user_id}';")
             spisok_hash_tag = cursor.fetchone()
             logger.info(f"Хэштеги с базы данных {spisok_hash_tag}")
             elements = spisok_hash_tag[0].split(",")
@@ -94,71 +94,71 @@ class Database:
             spisok_hash_tag = ",".join(elements)
 
             cursor.execute(
-                f"UPDATE users SET hashtags = '{spisok_hash_tag}' WHERE user_id = {user_id}"
+                f"UPDATE users SET hashtags = '{spisok_hash_tag}' WHERE user_id = '{user_id}'"
             )
             self.connection.commit()
 
-    def get_spisok_hash_tag(self, user_id: int) -> list:
+    def get_spisok_hash_tag(self, user_id: str) -> list:
         """
         :param user_id: Айди пользователя
         :return: Возвращаем список хэштегов, по которым будем парсить
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = {user_id}")
+            cursor.execute(f"SELECT hashtags FROM users WHERE user_id = '{user_id}'")
             hashtags = cursor.fetchone()
             logger.debug(f"Полученные хэштеги {hashtags}")
             return hashtags[0].split(",")
 
-    def if_hash_tag_in_db(self, id_users: int) -> True | False:
+    def if_hash_tag_in_db(self, id_users: str) -> True | False:
         """
         :param id_users: Номер пользователя
         :return: Возвращаем True или False в зависимости от того, подписан ли хоть на что-то пользователь
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT hash_tag FROM users WHERE user_id = {id_users}")
+            cursor.execute(f"SELECT hash_tag FROM users WHERE user_id = '{id_users}'")
             check = list(cursor.fetchone())
             logger.info(f'Получен хэштег "{check}"')
             if check == "":
                 return False
         return True
 
-    def update_count_posts(self, count: int, id_user: int) -> None:
+    def update_count_posts(self, count: int, id_user: str) -> None:
         """
         :param id_user: Айдишник пользователя
         :param count: Количество показываемых постов
         :return: Обновляет поле в базе данных
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"UPDATE users SET counts = {count} WHERE user_id = {id_user}")
+            cursor.execute(f"UPDATE users SET counts = {count} WHERE user_id = '{id_user}'")
             logger.info("Изменил количество постов")
             self.connection.commit()
 
-    def get_count_posts(self, id_user: int) -> int:
+    def get_count_posts(self, id_user: str) -> int:
         """
         :param id_user: Айдишник пользователя
         :return: Получает посты пользователя если они есть
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT counts FROM users WHERE user_id = {id_user}")
+            cursor.execute(f"SELECT counts FROM users WHERE user_id = '{id_user}'")
             return cursor.fetchone()
 
-    def update_freq_day(self, callback_freq: str, id_user: int) -> None:
+    def update_freq_day(self, callback_freq: str, id_user: str) -> None:
         """
         :param id_user: Айдишник пользователя
         :return: Заносим в базу данных частоту отправки
         """
         with self.connection.cursor() as cursor:
             cursor.execute(
-                f"UPDATE users SET frequency = '{callback_freq}' WHERE user_id = {id_user}"
+                f"UPDATE users SET frequency = '{callback_freq}' WHERE user_id = '{id_user}'"
             )
             logger.info("Запись успешно добавлена")
             self.connection.commit()
 
-    def get_freq_day_seconds(self, id_user: int) -> str:
+    def get_freq_day_seconds(self, id_user: str) -> str:
         """
         :param id_user: Айдишник пользователя
         :return: Получаем частоту отправки новостей
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT frequency FROM users WHERE user_id = {id_user}")
+            cursor.execute(f"SELECT frequency FROM users WHERE user_id = '{id_user}'")
             return cursor.fetchone()

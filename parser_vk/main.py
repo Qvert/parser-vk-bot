@@ -26,6 +26,7 @@ import answer_options
 import validators
 import config
 from loguru import logger
+from hash_function import *
 
 
 # Подключение клавиатур и базы данных админа
@@ -54,7 +55,7 @@ def log_error(f):
 
 @log_error
 def button(update, context):
-    id_user = update.effective_user.id
+    id_user = hash_word(str(update.effective_user.id))
     query = update.callback_query
     variant = query.data
     query.answer()
@@ -69,14 +70,15 @@ def button(update, context):
         )
     if variant == "exit":
         query.edit_message_text(
-            text="Выбрать количество показывающихся постов: /count\n"
-            "Выбор мероприятия: /choice\n"
-            "Выбор частоты отправки новостей: /frequency\n"
-            "Показать список подписанных новостей : /view\n"
-            "Войти как администратор: /admin\n"
-            "Начать сбор постов с новостями: /start_parser",
+            text="👇 Ниже вы можете настроить бота, а также начать собирать новости 👇\n"
+                 "📝 Выбрать количество показывающихся постов: /count\n"
+                 "🔀 Выбор мероприятия: /choice\n"
+                 "🕔 Выбор частоты отправки новостей: /frequency\n"
+                 "📋 Показать список подписанных новостей : /view\n"
+                 "🔐 Войти как администратор: /admin\n"
+                 "📬 Начать сбор постов с новостями: /start_parser",
             reply_markup=key_board_starting,
-        )
+    )
 
     if variant in tag_names_dict.keys():
         context.user_data["HASH"] = variant
@@ -98,6 +100,7 @@ def button(update, context):
 
     # Если пользователь нажал подписаться
     if variant == "subscribe":
+
         if not db.checked_hash_tag(
             tag_hash=context.user_data["HASH"], id_users=id_user
         ):
@@ -116,7 +119,7 @@ def button(update, context):
 
     # Если пользователь выбирал частоту
     if variant in ["one_day", "one_three_day", "one_week"]:
-        db.update_freq_day(callback_freq=variant, id_user=update.effective_user.id)
+        db.update_freq_day(callback_freq=variant, id_user=id_user)
         query.edit_message_text(text=answer_options.get_answer_freq())
 
 
@@ -126,12 +129,13 @@ def helping(update: Updater, context: CallbackContext):
     Функция для предоставления справки по пользованию ботом
     """
     update.message.reply_text(
-        "Выбрать количество показывающихся постов: /count\n"
-        "Выбор мероприятия: /choice\n"
-        "Выбор частоты отправки новостей: /frequency\n"
-        "Показать список подписанных новостей : /view\n"
-        "Войти как администратор: /admin\n"
-        "Начать сбор постов с новостями: /start_parser",
+        "👇 Ниже вы можете настроить бота, а также начать собирать новости 👇\n"
+        "📝 Выбрать количество показывающихся постов: /count\n"
+        "🔀 Выбор мероприятия: /choice\n"
+        "🕔 Выбор частоты отправки новостей: /frequency\n"
+        "📋 Показать список подписанных новостей : /view\n"
+        "🔐 Войти как администратор: /admin\n"
+        "📬 Начать сбор постов с новостями: /start_parser",
         reply_markup=key_board_starting,
     )
 
@@ -143,15 +147,16 @@ def start(update: Updater, context: CallbackContext):
         "новости из групп вк. Для того чтобы узнать\n"
         "как мной пользоваться нажми /help\n"
     )
-    if db.user_exists(id_user := update.effective_user.id) is None:
-        db.add_users(id_user)
+    id_hash = hash_word(id_user := str(update.effective_user.id))
+    if db.user_exists(id_hash) is None:
+        db.add_users(id_hash)
     else:
         update.message.reply_text("Вы уже были зарегестрированы 😄")
 
 
 @log_error
 def answer_count(update: Updater, context: CallbackContext):
-    id_user = update.effective_user.id
+    id_user = hash_word(str(update.effective_user.id))
     if update.message.text in "12345678910":
         db.update_count_posts(count=update.message.text, id_user=id_user)
         update.message.reply_text(
@@ -194,10 +199,11 @@ def frequency(update: Updater, context: CallbackContext):
 
 @log_error
 def view_fag(update, context):
-    if db.get_spisok_hash_tag(update.message.chat_id) is not None:
+    id_user = hash_word(str(update.message.chat_id))
+    if db.get_spisok_hash_tag(id_user) is not None:
         update.message.reply_text(
             f"Вы подписаны на следующие хэштеги групп👇\n"
-            f'{", ".join(db.get_spisok_hash_tag(update.message.chat_id))}\n'
+            f'{", ".join(db.get_spisok_hash_tag(id_user))}\n'
         )
     else:
         update.message.reply_text("Вы не подписаны ни на какие новости 😧")
@@ -205,7 +211,7 @@ def view_fag(update, context):
 
 @log_error
 def message_parse(context):
-    id_users = context.job.context
+    id_users = hash_word(str(context.job.context))
 
     if not db.get_count_posts(id_users)[0]:
         db.update_count_posts(count=1, id_user=id_users)
@@ -229,7 +235,7 @@ def message_parse(context):
             dict_posts = parser_vk.get_posts_vk(tag_names_dict[elem], count)
             context.bot.send_message(
                 chat_id=context.job.context,
-                text=f"👇👇👇 Ниже новости постов хэштега {elem} 👇👇",
+                text=f"👇👇 Ниже новости постов хэштега {elem} 👇👇",
             )
 
             # Выводим новостные посты групп
@@ -240,9 +246,10 @@ def message_parse(context):
 @log_error
 def got_parse_mod(update, context):
     # Функция запуска парсера по времени
-    dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 86400}
+    # 259200 604800 86400
+    dict_freg_day = {"one_three_day": 100, "one_week": 170, "one_day": 86400}
 
-    var = db.get_freq_day_seconds(update.message.chat_id)[0]
+    var = db.get_freq_day_seconds(id_user := hash_word(str(update.message.chat_id)))[0]
 
     if var in dict_freg_day.keys():
         update.message.reply_text(
@@ -259,12 +266,14 @@ def got_parse_mod(update, context):
 def registration_new_admin_nickname(update, context):
     # Функция для регистраций никнейма нового администратора
     nickname = update.message.text
-    db_admin.add_nickname_admin(admin_id=update.effective_user.id, nickname=nickname)
+    id_user = hash_word(str(update.effective_user.id))
+    db_admin.add_nickname_admin(admin_id=id_user, nickname=hash_word(nickname))
     update.message.reply_text("Ваш никнейм успешно сохранён")
+    update.message.reply_text("👇 Теперь вы можете использовать следующие функций 👇")
     update.message.reply_text(
-        "Вход выполнен от имени администратора и вам доступны две функций\n"
-        "Расширение списка новостных групп\n"
-        "Расширение списка хэштегов"
+        "Расширение списка новостных групп: \n"
+        "Расширение списка хэштегов: \n"
+        "Удаление хэштега и названия мероприятия: "
     )
     return ConversationHandler.END
 
@@ -272,8 +281,9 @@ def registration_new_admin_nickname(update, context):
 @log_error
 def registration_new_admin(update, context):
     # Функция регистраций нового администратора
+    id_user = hash_word(str(update.effective_user.id))
     answer = validators.check_new_password(
-        update.message.text, admin_id=update.effective_user.id
+        update.message.text, admin_id=id_user
     )
     if answer[0] == 0:
         update.message.reply_text(answer[1])
@@ -311,16 +321,22 @@ def password_check_if_admin(update, context):
     # Функция проверки авторизаций для админа который был зарегестрирован
     try:
         text_check = update.message.text.split()
-        logger.info(f'Пароль и никнейм введёный пользователем {text_check}')
-        user_id = update.effective_user.id
-        db_password_nickname = db_admin.get_password_nickname_admin(admin_id=user_id)
-        logger.info(f'Пароль и никнейм из базы {db_password_nickname}')
+        logger.info(f"Пароль и никнейм введёный пользователем {text_check}")
+        id_user = hash_word(str(update.effective_user.id))
+        db_password_nickname = db_admin.get_password_nickname_admin(admin_id=id_user)
+        logger.info(f"Пароль и никнейм из базы {db_password_nickname}")
 
+        # Проверка что пароль и никнейм совпадают с базой данных
         if (
-            db_password_nickname[0] == text_check[0]
-            and db_password_nickname[1] == text_check[1]
+            check_word(hashed_password=db_password_nickname[0], user_password=text_check[0])
+            and check_word(hashed_password=db_password_nickname[1], user_password=text_check[1])
         ):
-            update.message.reply_text("Поздравляю, вы успешно авторизовались.")
+            update.message.reply_text(f'Приветствую вас {text_check[1]}')
+            update.message.reply_text(
+                "Расширение списка новостных групп: \n"
+                "Расширение списка хэштегов: \n"
+                "Удаление хэштега и названия мероприятия: "
+            )
             return ConversationHandler.END
         else:
             update.message.reply_text(
@@ -334,10 +350,9 @@ def password_check_if_admin(update, context):
 @log_error
 def admin(update, context):
     # Функция приветствия будущего админа
-    if (
-        db_admin.is_admin_is_db(admin_id=update.effective_user.id)
-        != update.effective_user.id
-    ):
+    id_user = hash_word(str(update.effective_user.id))
+
+    if db_admin.is_admin_is_db(admin_id=id_user):
         update.message.reply_text(
             "😑 Вы хотите войти как администратор. 😑\n"
             "Для начала введите пожалуйста пароль,\n"
@@ -380,6 +395,9 @@ def main():
         },
         fallbacks=[CommandHandler("cancel", commands_admins)],
     )
+    '''conv_hundler_commands = ConversationHandler(
+        entry_points=[CommandHandler()]
+    )'''
     dis.add_handler(conv_handler)
     dis.add_handler(CommandHandler("admin", admin))
     dis.add_handler(CommandHandler("help", helping))
@@ -392,7 +410,6 @@ def main():
 
     dis.add_handler(MessageHandler(Filters.text, answer_count))
     dis.add_handler(CallbackQueryHandler(callback=button, pass_chat_data=True))
-
 
     update.start_polling()
     job_queue.start()
