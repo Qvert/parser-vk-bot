@@ -26,9 +26,7 @@ import answer_options
 import validators
 import config
 from loguru import logger
-from flask import Flask
 
-server = Flask(__name__)
 
 # Подключение клавиатур и базы данных админа
 db = Database()
@@ -360,47 +358,46 @@ def commands_admins(update, context):
     update.message.reply_text("Здесь в будущем появятся команды!!!!")
 
 
-update = Updater(token=config.BOT_TOKEN, use_context=True)
-dis = update.dispatcher
-job_queue = JobQueue()
-job_queue.set_dispatcher(dis)
+def main():
+    update = Updater(token=config.BOT_TOKEN, use_context=True)
+    dis = update.dispatcher
+    job_queue = JobQueue()
+    job_queue.set_dispatcher(dis)
 
-conv_handler = ConversationHandler(
-    entry_points=[CommandHandler("admin", admin)],
-    states={
-        "PASSWORD": [MessageHandler(Filters.text, password)],
-        "REGISTRATION_NEW_ADMIN": [
-            MessageHandler(Filters.text, registration_new_admin)
-        ],
-        "REGISTRATION_NEW_ADMIN_NICKNAME": [
-            MessageHandler(Filters.text, registration_new_admin_nickname)
-        ],
-        "PASSWORD_CHECK_IF_ADMIN": [
-            MessageHandler(Filters.text, password_check_if_admin)
-        ],
-    },
-    fallbacks=[CommandHandler("cancel", commands_admins)],
-)
-dis.add_handler(conv_handler)
-dis.add_handler(CommandHandler("admin", admin))
-dis.add_handler(CommandHandler("help", helping))
-dis.add_handler(CommandHandler("start", start))
-dis.add_handler(CommandHandler("count", count))
-dis.add_handler(CommandHandler("choice", choice))
-dis.add_handler(CommandHandler("frequency", frequency))
-dis.add_handler(CommandHandler("start_parser", got_parse_mod, pass_job_queue=True))
-dis.add_handler(CommandHandler("view", view_fag))
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler("admin", admin)],
+        states={
+            "PASSWORD": [MessageHandler(Filters.text, password)],
+            "REGISTRATION_NEW_ADMIN": [
+                MessageHandler(Filters.text, registration_new_admin)
+            ],
+            "REGISTRATION_NEW_ADMIN_NICKNAME": [
+                MessageHandler(Filters.text, registration_new_admin_nickname)
+            ],
+            "PASSWORD_CHECK_IF_ADMIN": [
+                MessageHandler(Filters.text, password_check_if_admin)
+            ],
+        },
+        fallbacks=[CommandHandler("cancel", commands_admins)],
+    )
+    dis.add_handler(conv_handler)
+    dis.add_handler(CommandHandler("admin", admin))
+    dis.add_handler(CommandHandler("help", helping))
+    dis.add_handler(CommandHandler("start", start))
+    dis.add_handler(CommandHandler("count", count))
+    dis.add_handler(CommandHandler("choice", choice))
+    dis.add_handler(CommandHandler("frequency", frequency))
+    dis.add_handler(CommandHandler("start_parser", got_parse_mod, pass_job_queue=True))
+    dis.add_handler(CommandHandler("view", view_fag))
 
-dis.add_handler(MessageHandler(Filters.text, answer_count))
-dis.add_handler(CallbackQueryHandler(callback=button, pass_chat_data=True))
+    dis.add_handler(MessageHandler(Filters.text, answer_count))
+    dis.add_handler(CallbackQueryHandler(callback=button, pass_chat_data=True))
 
 
-update.start_polling()
-job_queue.start()
-update.idle()
+    update.start_polling()
+    job_queue.start()
+    update.idle()
 
 
 if __name__ == "__main__":
-    update.remove_webhook()
-    update.set_webhook(url=config.API_URL)
-    server.run(host="0.0.0.0", port=5000)
+    main()
