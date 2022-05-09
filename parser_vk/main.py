@@ -22,7 +22,7 @@ from database.tools import Database
 from database.admin_tools import Admin
 from tag_name import tag_name_list, generation_list_news, list_name_news
 import answer_options
-import validators
+from validators import *
 import config
 from loguru import logger
 from hash_function import *
@@ -267,7 +267,7 @@ def registration_new_admin_nickname(update, _):
 def registration_new_admin(update, _):
     # Функция регистраций нового администратора
     id_user = hash_word(str(update.effective_user.id))
-    answer = validators.check_new_password(
+    answer = check_new_password(
         update.message.text, admin_id=id_user
     )
     if answer[0] == 0:
@@ -318,8 +318,7 @@ def password_check_if_admin(update, _):
         ):
             update.message.reply_text(f'Приветствую вас {text_check[1]}')
             update.message.reply_text(
-                "Расширение списка новостных групп: /add_news\n"
-                "Расширение списка хэштегов: /add_hash\n"
+                "Расширение списка новостных групп и хэштегов: /add_news\n"
                 "Удаление хэштега и названия мероприятия: /delete_news"
             )
             return ConversationHandler.END
@@ -355,7 +354,48 @@ def admin(update):
 
 @log_error
 def commands_admins(update):
-    update.message.reply_text("Здесь в будущем появятся команды!!!!")
+    pass
+
+
+@log_error
+def add_news(update, _):
+    update.message.reply_text(
+        'Для начала введите название мероприятия или группы '
+    )
+    return "ADD_NEWS"
+
+
+@log_error
+def add_news_word(update, context):
+    # Функция добавление название мероприятия
+    text_news = update.message.text
+    if check_correct_news(text_news):
+        context.user_data['NEWS'] = text_news
+        update.message.reply_text(
+            'Отлично, теперь введите хэштег или короткое название группы, откуда будем собирать новости'
+        )
+        return "ADD_HASH"
+    else:
+        update.message.reply_text('Простите, но название должно содержать только русские буквы')
+        return "ADD_NEWS"
+
+
+@log_error
+def add_news_hash(update, context):
+    # Функция добавления хэштега
+    news_hash = update.message.text
+    if check_correct_hash(news_hash):
+        list_name_news.append(context.user_data['NEWS'])
+        tag_name_list.append(news_hash)
+        update.message.reply_text(
+            'Отлично, список групп успешно расширен)\n'
+        )
+        return ConversationHandler.END
+    else:
+        update.message.reply_text(
+            'Пожалуйста, введите коректно хэштег'
+        )
+        return "ADD_HASH"
 
 
 def main():
@@ -378,9 +418,22 @@ def main():
                 MessageHandler(Filters.text, password_check_if_admin)
             ],
         },
-        fallbacks=[CommandHandler("cancel", commands_admins)],
+        fallbacks=[CommandHandler("cancel", commands_admins)]
     )
 
+    conv_handler_news = ConversationHandler(
+        entry_points=[CommandHandler("add_news", add_news)],
+        states={
+            "ADD_NEWS": [
+                MessageHandler(Filters.text, add_news_word)
+            ],
+            "ADD_HASH": [
+                MessageHandler(Filters.text, add_news_hash)
+            ]
+        },
+        fallbacks=[CommandHandler("cancel", commands_admins)]
+    )
+    dis.add_handler(conv_handler_news)
     dis.add_handler(conv_handler)
     dis.add_handler(CommandHandler("admin", admin))
     dis.add_handler(CommandHandler("help", helping))
