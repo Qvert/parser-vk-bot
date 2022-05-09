@@ -2,13 +2,13 @@ import re
 from database import admin_tools
 from hash_function import hash_word
 import parser_vk
-
+from loguru import logger
 
 db = admin_tools.Admin()
 
 
 # Функций валидаций введённых данных
-def check_new_password(password: str, admin_id: str) -> str | list:
+def check_new_password(password: str, admin_id: str) -> str or list:
     """
     :param admin_id: Айди администратора
     :param password: Переданный пароль от пользователя
@@ -48,7 +48,8 @@ def check_correct_hash(hash: str) -> True | False:
     :param hash: Хэштег, введённый администратором
     :return: Возвращаем результат проверки правильности ввода хэштега
     """
-    if parser_vk.get_posts_vk(owner_id=hash, count=1)['items'][0]['text'] is not None:
+    if answer := parser_vk.get_posts_vk(owner_id=hash, count=1)['items'][0]['text'] is not None:
+        logger.debug(f'Ответ запроса {answer}')
         return True
     else:
         return False

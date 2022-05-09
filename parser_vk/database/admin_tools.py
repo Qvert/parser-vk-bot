@@ -57,15 +57,17 @@ class Admin:
             logger.debug("Добавил никнейм в базу данных")
             self.connection.commit()
 
-    def add_admins_to_database(self, user_id: str) -> None:
+    def add_admins_to_database(self, admin_id: str) -> None:
         """
-        :param user_id: айди будущего админа
+        :param admin_id: айди будущего админа
         :return: добавляем админа в базу данных
         """
         with self.connection.cursor() as cursor:
             cursor.execute(
                 f"INSERT INTO admins(admin_id, admin_password, admin_nickname, admin_hash, admin_post)"
-                f"VALUES('{user_id}', '', '', '', '');"
+                f"VALUES('{admin_id}', '', '', '', '');"
             )
             logger.info('Закинул admin_id в базу')
             self.connection.commit()
+
+

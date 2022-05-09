@@ -1,26 +1,7 @@
-# Список хэштегов на которые можно подписаться
+from database import connect_to_database
 
 
-tag_name_list = [
-    '#TechnoCom',
-    '#IT_fest_2022',
-    '#IASF2022',
-    '#ФестивальОКК',
-    '#Нейрофест',
-    '#НевидимыйМир',
-    '#КонкурсНИР'
-]
-
-
-list_name_news = [
-    'Международный конкурс детских инженерных команд',
-    'Международный фестиваль информационных технологий «ITфест»',
-    'Международный аэрокосмический фестиваль',
-    'Всероссийский фестиваль общекультурных компетенций',
-    'Всероссийский фестиваль нейротехнологий «Нейрофест»',
-    'Всероссийский конкурс по микробиологии «Невидимый мир',
-    'Всероссийский конкурс научноисследовательских работ',
-]
+connection = connect_to_database.connection
 
 
 # Функция для генераций списка новостей
@@ -36,3 +17,30 @@ def generation_list_news(tag_name: list, news_list: list) -> str:
     return '\n'.join(list_gen)
 
 
+# Функция для генераций списка хэштегов новостей из базы данных админа
+def list_hash_database() -> list:
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT hash FROM hash_post;")
+        return cursor.fetchone()[0].split(',')
+
+
+# Функция для возвращения списка названий мероприятий
+def list_name_new() -> list:
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT post FROM hash_post;")
+        return cursor.fetchone()[0].split(',')
+
+
+# Функция для добавления в базу данных хэштега и группы
+def add_hash_post_to_database(hash: list, news: list) -> None:
+    """
+    :param hash: Список хэштегов
+    :param news: Список названий мероприятий
+    :return: Обновляем базу данных с хэштегами и их названиями
+    """
+    list_hash, list_name = list_hash_database(), list_name_new()
+    list_hash.append(hash), list_name.append(news)
+    list_hash, list_name = ','.join(list_hash), ','.join(list_name)
+    with connection.cursor() as cursor:
+        cursor.execute(f"UPDATE hash_post SET hash = '{list_hash}', post = '{list_name}'")
+        connection.commit()

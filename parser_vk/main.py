@@ -17,10 +17,10 @@ from key_board import (
     key_board_count,
     keyboard_frequency,
 )
-import parser_vk
 from database.tools import Database
 from database.admin_tools import Admin
-from tag_name import tag_name_list, generation_list_news, list_name_news
+from .parser_vk import get_posts_vk
+from tag_name import *
 import answer_options
 from validators import *
 import config
@@ -33,7 +33,6 @@ db = Database()
 db_admin = Admin()
 key_board_starting = InlineKeyboardMarkup(key_board_start)
 back_key = InlineKeyboardMarkup(back_key)
-key_board_choice = InlineKeyboardMarkup(generation_key_board(tag_name_list))
 keyboard_sub_unsub = InlineKeyboardMarkup(keyboard_sub_unsub)
 key_board_count = ReplyKeyboardMarkup(key_board_count, one_time_keyboard=True)
 keyboard_frequency = InlineKeyboardMarkup(keyboard_frequency)
@@ -79,15 +78,15 @@ def button(update, context):
             reply_markup=key_board_starting,
     )
 
-    if variant in tag_name_list:
+    if variant in list_hash_database():
         context.user_data["HASH"] = variant
         query.edit_message_text(variant, reply_markup=keyboard_sub_unsub)
         logger.info(f'Получил {context.user_data["HASH"]}')
 
     if variant == "back":
         query.edit_message_text(
-            generation_list_news(tag_name=tag_name_list, news_list=list_name_news),
-            reply_markup=key_board_choice,
+            generation_list_news(tag_name=list_hash_database(), news_list=list_name_new()),
+            reply_markup=InlineKeyboardMarkup(generation_key_board(list_hash_database())),
         )
 
     # Если пользователь нажал подписаться
@@ -170,8 +169,8 @@ def count(update: Updater, _):
 @log_error
 def choice(update: Updater, _):
     update.message.reply_text(
-        generation_list_news(tag_name=tag_name_list, news_list=list_name_news),
-        reply_markup=key_board_choice,
+        generation_list_news(tag_name=list_hash_database(), news_list=list_name_new()),
+        reply_markup=InlineKeyboardMarkup(generation_key_board(list_hash_database())),
     )
 
 
@@ -217,7 +216,7 @@ def message_parse(context):
             f"Информация перед парсингом посты: {count} список хэш: {list_tag}"
         )
         for elem in list_tag:
-            dict_posts = parser_vk.get_posts_vk(elem, count)
+            dict_posts = get_posts_vk(elem, count)
             context.bot.send_message(
                 chat_id=context.job.context,
                 text=f"👇👇 Ниже новости постов хэштега {elem} 👇👇",
@@ -232,7 +231,7 @@ def message_parse(context):
 def got_parse_mod(update, context):
     # Функция запуска парсера по времени
     # 259200 604800 86400
-    dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 86400}
+    dict_freg_day = {"one_three_day": 20, "one_week": 604800, "one_day": 86400}
 
     var = db.get_freq_day_seconds(id_user := hash_word(str(update.message.chat_id)))[0]
 
@@ -256,9 +255,8 @@ def registration_new_admin_nickname(update, _):
     update.message.reply_text("Ваш никнейм успешно сохранён")
     update.message.reply_text("👇 Теперь вы можете использовать следующие функций 👇")
     update.message.reply_text(
-        "Расширение списка новостных групп: \n"
-        "Расширение списка хэштегов: \n"
-        "Удаление хэштега и названия мероприятия: "
+        "Расширение списка новостных групп и хэштегов: /add_news\n"
+        "Удаление хэштега и названия мероприятия: /delete_news"
     )
     return ConversationHandler.END
 
@@ -332,7 +330,7 @@ def password_check_if_admin(update, _):
 
 
 @log_error
-def admin(update):
+def admin(update, _):
     # Функция приветствия будущего админа
     id_user = hash_word(str(update.effective_user.id))
 
@@ -384,9 +382,9 @@ def add_news_word(update, context):
 def add_news_hash(update, context):
     # Функция добавления хэштега
     news_hash = update.message.text
+    logger.info('Получен хэштег')
     if check_correct_hash(news_hash):
-        list_name_news.append(context.user_data['NEWS'])
-        tag_name_list.append(news_hash)
+        add_hash_post_to_database(hash=news_hash, news=context.user_data['NEWS'])
         update.message.reply_text(
             'Отлично, список групп успешно расширен)\n'
         )
