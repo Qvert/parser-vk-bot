@@ -30,7 +30,7 @@ def check_new_password(password: str, admin_id: str) -> str or list:
         return "Извините, пароль не должен содержать пробелов"
 
     else:
-        db.add_admins_to_database(user_id=admin_id)
+        db.add_admins_to_database(admin_id=admin_id)
         db.add_password_admin_to_base(admin_id=admin_id, password=hash_word(password))
         return [0, "Ваш пароль прошёл проверку и был внесён в базу данных"]
 
