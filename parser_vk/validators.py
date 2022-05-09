@@ -1,7 +1,7 @@
 import re
 from database import admin_tools
 from hash_function import hash_word
-import parser_vk
+from parser_vk.parser_vk_function import get_posts_vk
 from loguru import logger
 
 db = admin_tools.Admin()
@@ -48,7 +48,7 @@ def check_correct_hash(hash: str) -> True | False:
     :param hash: Хэштег, введённый администратором
     :return: Возвращаем результат проверки правильности ввода хэштега
     """
-    if answer := parser_vk.get_posts_vk(owner_id=hash, count=1)['items'][0]['text'] is not None:
+    if answer := get_posts_vk(owner_id=hash, count=1)['items'][0]['text'] is not None:
         logger.debug(f'Ответ запроса {answer}')
         return True
     else:

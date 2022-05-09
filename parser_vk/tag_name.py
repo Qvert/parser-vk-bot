@@ -32,15 +32,20 @@ def list_name_new() -> list:
 
 
 # Функция для добавления в базу данных хэштега и группы
-def add_hash_post_to_database(hash: list, news: list) -> None:
+def delete_add_hash_post_to_database(hash: list, news: list, key: str) -> None:
     """
+    :param key: Параметр для удаления или добавления в базу
     :param hash: Список хэштегов
     :param news: Список названий мероприятий
     :return: Обновляем базу данных с хэштегами и их названиями
     """
     list_hash, list_name = list_hash_database(), list_name_new()
-    list_hash.append(hash), list_name.append(news)
+    if key == 'добавить':
+        list_hash.append(hash), list_name.append(news)
+    elif key == 'удалить':
+        list_hash.remove(hash), list_name.remove(news)
     list_hash, list_name = ','.join(list_hash), ','.join(list_name)
     with connection.cursor() as cursor:
         cursor.execute(f"UPDATE hash_post SET hash = '{list_hash}', post = '{list_name}'")
         connection.commit()
+

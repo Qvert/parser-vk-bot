@@ -19,7 +19,7 @@ from key_board import (
 )
 from database.tools import Database
 from database.admin_tools import Admin
-from .parser_vk import get_posts_vk
+from parser_vk.parser_vk_function import get_posts_vk
 from tag_name import *
 import answer_options
 from validators import *
@@ -231,7 +231,7 @@ def message_parse(context):
 def got_parse_mod(update, context):
     # Функция запуска парсера по времени
     # 259200 604800 86400
-    dict_freg_day = {"one_three_day": 20, "one_week": 604800, "one_day": 86400}
+    dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 10}
 
     var = db.get_freq_day_seconds(id_user := hash_word(str(update.message.chat_id)))[0]
 
@@ -384,7 +384,7 @@ def add_news_hash(update, context):
     news_hash = update.message.text
     logger.info('Получен хэштег')
     if check_correct_hash(news_hash):
-        add_hash_post_to_database(hash=news_hash, news=context.user_data['NEWS'])
+        delete_add_hash_post_to_database(hash=news_hash, news=context.user_data['NEWS'], key='добавить')
         update.message.reply_text(
             'Отлично, список групп успешно расширен)\n'
         )
@@ -394,6 +394,43 @@ def add_news_hash(update, context):
             'Пожалуйста, введите коректно хэштег'
         )
         return "ADD_HASH"
+
+
+@log_error
+def delete_news(update, _):
+    # Функция для удаления хэштега и названия группы
+    update.message.reply_text(
+        "Введите сначала название группы"
+    )
+    return 'DELETE_POST'
+
+
+@log_error
+def delete_post(update, context):
+    # Функция для получения названия поста для удаления
+    post = update.message.text
+    if post not in list_name_new():
+        update.message.reply_text('Проверьте правильность написания!!!')
+        return 'DELETE_POST'
+    else:
+        context.user_data['NEWS'] = post
+        update.message.reply_text(
+            'Теперь введите хэштег группы'
+        )
+        return 'DELETE_HASH'
+
+
+@log_error
+def delete_hash(update, context):
+    # Функция для удаления хэштега и названия группы
+    hash = update.message.text
+    if hash not in list_hash_database():
+        update.message.text('Неправильно набран хэштег!!!')
+        return "DELETE_HASH"
+    else:
+        delete_add_hash_post_to_database(hash=hash, news=context.user_data['NEWS'], key='удалить')
+        update.message.reply_text('Список успешно изменён')
+        return ConversationHandler.END
 
 
 def main():
@@ -431,6 +468,16 @@ def main():
         },
         fallbacks=[CommandHandler("cancel", commands_admins)]
     )
+
+    conv_handler_delete_news = ConversationHandler(
+        entry_points=[CommandHandler("delete_news", delete_news)],
+        states={
+            "DELETE_POST": [MessageHandler(Filters.text, delete_post)],
+            "DELETE_HASH": [MessageHandler(Filters.text, delete_hash)]
+        },
+        fallbacks=[CommandHandler("cancel", commands_admins)]
+    )
+    dis.add_handler(conv_handler_delete_news)
     dis.add_handler(conv_handler_news)
     dis.add_handler(conv_handler)
     dis.add_handler(CommandHandler("admin", admin))
