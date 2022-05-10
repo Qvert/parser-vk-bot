@@ -1,6 +1,7 @@
 import vk
 import os
 
+
 session = vk.Session(access_token=os.environ['ACCES_TOKEN'])
 vk_api = vk.API(session)
 

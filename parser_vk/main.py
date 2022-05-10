@@ -16,6 +16,7 @@ from key_board import (
     keyboard_sub_unsub,
     key_board_count,
     keyboard_frequency,
+    back_key_back_to_choice,
     # key_board_help
 )
 from database.tools import Database
@@ -38,6 +39,7 @@ keyboard_sub_unsub = InlineKeyboardMarkup(keyboard_sub_unsub)
 key_board_count = ReplyKeyboardMarkup(key_board_count, one_time_keyboard=True)
 # key_board_help = ReplyKeyboardMarkup(key_board_help)
 keyboard_frequency = InlineKeyboardMarkup(keyboard_frequency)
+back_key_back_to_choice = InlineKeyboardMarkup(back_key_back_to_choice)
 
 
 # Функция декоратор для отлова ошибок
@@ -68,7 +70,7 @@ def button(update, context):
             "Сайт с мероприятиями https://www.научим.online",
             reply_markup=back_key,
         )
-    if variant == "exit":
+    elif variant == "exit":
         query.edit_message_text(
             text="👇 Ниже вы можете настроить бота, а также начать собирать новости 👇\n"
             "📝 Выбрать количество показывающихся постов: /count\n"
@@ -80,12 +82,21 @@ def button(update, context):
             reply_markup=key_board_starting,
         )
 
-    if variant in list_hash_database():
+    elif variant in list_hash_database():
         context.user_data["HASH"] = variant
         query.edit_message_text(variant, reply_markup=keyboard_sub_unsub)
         logger.info(f'Получил {context.user_data["HASH"]}')
 
-    if variant == "back":
+    elif variant == "back":
+        query.edit_message_text(
+            generation_list_news(
+                tag_name=list_hash_database(), news_list=list_name_new()
+            ),
+            reply_markup=InlineKeyboardMarkup(
+                generation_key_board(list_hash_database())
+            ),
+        )
+    elif variant == "back_to_choice":
         query.edit_message_text(
             generation_list_news(
                 tag_name=list_hash_database(), news_list=list_name_new()
@@ -96,26 +107,38 @@ def button(update, context):
         )
 
     # Если пользователь нажал подписаться
-    if variant == "subscribe":
+    elif variant == "subscribe":
 
         if not db.checked_hash_tag(
             tag_hash=context.user_data["HASH"], id_users=id_user
         ):
             db.add_hash_tag(context.user_data["HASH"], id_user)
-            query.edit_message_text(answer_options.get_answer_subscribe())
+            query.edit_message_text(
+                answer_options.get_answer_subscribe(),
+                reply_markup=back_key_back_to_choice,
+            )
         else:
-            query.edit_message_text("Вы уже подписаны на это мероприятие 😉")
+            query.edit_message_text(
+                "Вы уже подписаны на это мероприятие 😉",
+                reply_markup=back_key_back_to_choice,
+            )
 
     # Если пользователь нажал отписаться
-    if variant == "unsubscribe":
+    elif variant == "unsubscribe":
         if db.checked_hash_tag(tag_hash=context.user_data["HASH"], id_users=id_user):
             db.delete_hash_tag(context.user_data["HASH"], user_id=id_user)
-            query.edit_message_text(answer_options.get_answer_unsubcribe())
+            query.edit_message_text(
+                answer_options.get_answer_unsubcribe(),
+                reply_markup=back_key_back_to_choice,
+            )
         else:
-            query.edit_message_text("Извините, вы не были подписаны на эти новости 😑")
+            query.edit_message_text(
+                "Извините, вы не были подписаны на эти новости 😑",
+                reply_markup=back_key_back_to_choice,
+            )
 
     # Если пользователь выбирал частоту
-    if variant in ["one_day", "one_three_day", "one_week"]:
+    elif variant in ["one_day", "one_three_day", "one_week"]:
         db.update_freq_day(callback_freq=variant, id_user=id_user)
         query.edit_message_text(text=answer_options.get_answer_freq())
 
@@ -133,7 +156,7 @@ def helping(update: Updater, _):
         "📋 Показать список подписанных новостей : /view\n"
         "🔐 Войти как администратор: /admin\n"
         "📬 Начать сбор постов с новостями: /start_parser",
-        reply_markup=key_board_starting
+        reply_markup=key_board_starting,
     )
 
 
@@ -141,8 +164,11 @@ def helping(update: Updater, _):
 def start(update: Updater, context):
     # Функция приветствия пользователя
 
-    context.bot.send_photo(chat_id=update.effective_user.id,
-                           photo='https://st3.depositphotos.com/29688696/31993/v/1600/depositphotos_319933748-stock-illustration-chat-bot-say-hi-robots.jpg')
+    context.bot.send_photo(
+        chat_id=update.effective_user.id,
+        photo="https://st3.depositphotos.com/29688696/31993/v/1600/depositphotos_319933748-stock-illustration-chat-bot-say-hi-robots.jpg",
+    )
+
     update.message.reply_text(
         "Приветствую тебя, я бот-парсер,\n"
         "который собирает новости из групп вк\n"
@@ -192,17 +218,24 @@ def frequency(update: Updater, _):
 @log_error
 def view_fag(update, _):
     id_user = hash_word(str(update.message.chat_id))
-    if db.get_spisok_hash_tag(id_user) is not None:
+    for elem in db.get_spisok_hash_tag(user_id=id_user):
+        if elem not in list_hash_database():
+            if db.checked_hash_tag(tag_hash=elem, id_users=id_user):
+                db.delete_hash_tag(elem, user_id=id_user)
+
+    if db.get_spisok_hash_tag(id_user) is None:
+        update.message.reply_text("Вы не подписаны ни на какие новости 😧")
+
+    else:
         update.message.reply_text(
             f"Вы подписаны на следующие хэштеги групп👇\n"
             f'{", ".join(db.get_spisok_hash_tag(id_user))}\n'
         )
-    else:
-        update.message.reply_text("Вы не подписаны ни на какие новости 😧")
 
 
 @log_error
 def message_parse(context):
+    # Функция парсинга новостей
     id_users = hash_word(str(context.job.context))
 
     if not db.get_count_posts(id_users):
@@ -237,7 +270,7 @@ def message_parse(context):
 def got_parse_mod(update, context):
     # Функция запуска парсера по времени
     # 259200 604800 86400
-    dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 60}
+    dict_freg_day = {"one_three_day": 259200, "one_week": 604800, "one_day": 20}
 
     var = db.get_freq_day_seconds(id_user := hash_word(str(update.message.chat_id)))[0]
 
@@ -417,9 +450,7 @@ def delete_news(update, _):
     # Функция для удаления хэштега и названия группы
     update.message.reply_text("Введите название группы")
     update.message.reply_text("👇Ниже список мероприятий👇")
-    update.message.reply_text(
-        '.\n'.join(list_name_new())
-    )
+    update.message.reply_text(".\n".join(list_name_new()))
     return "DELETE_POST"
 
 
@@ -434,9 +465,7 @@ def delete_post(update, context):
         context.user_data["NEWS"] = post
         update.message.reply_text("Теперь введите хэштег группы")
         update.message.reply_text("👇Ниже список хэштегов👇")
-        update.message.reply_text(
-            '.\n'.join(list_hash_database())
-        )
+        update.message.reply_text(".\n".join(list_hash_database()))
         return "DELETE_HASH"
 
 
@@ -468,9 +497,7 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("admin", admin)],
         states={
-            "PASSWORD": [
-                MessageHandler(Filters.text, password)
-            ],
+            "PASSWORD": [MessageHandler(Filters.text, password)],
             "REGISTRATION_NEW_ADMIN": [
                 MessageHandler(Filters.text, registration_new_admin)
             ],
@@ -479,35 +506,27 @@ def main():
             ],
             "PASSWORD_CHECK_IF_ADMIN": [
                 MessageHandler(Filters.text, password_check_if_admin)
-            ]
+            ],
         },
         fallbacks=[MessageHandler(Filters.text, commands_admins)],
     )
 
     conv_handler_add_hash_post = ConversationHandler(
-        entry_points=[CommandHandler('add_news', add_news)],
+        entry_points=[CommandHandler("add_news", add_news)],
         states={
-            "ADD_NEWS": [
-                MessageHandler(Filters.text, add_news_word)
-            ],
-            "ADD_HASH": [
-                MessageHandler(Filters.text, add_news_hash)
-            ],
+            "ADD_NEWS": [MessageHandler(Filters.text, add_news_word)],
+            "ADD_HASH": [MessageHandler(Filters.text, add_news_hash)],
         },
-        fallbacks=[MessageHandler(Filters.text, commands_admins)]
+        fallbacks=[MessageHandler(Filters.text, commands_admins)],
     )
 
     conv_handler_delete_hash_post = ConversationHandler(
-        entry_points=[CommandHandler('delete_news', delete_news)],
+        entry_points=[CommandHandler("delete_news", delete_news)],
         states={
-            "DELETE_POST": [
-                MessageHandler(Filters.text, delete_post)
-            ],
-            "DELETE_HASH": [
-                MessageHandler(Filters.text, delete_hash)
-            ]
+            "DELETE_POST": [MessageHandler(Filters.text, delete_post)],
+            "DELETE_HASH": [MessageHandler(Filters.text, delete_hash)],
         },
-        fallbacks=[MessageHandler(Filters.text, commands_admins)]
+        fallbacks=[MessageHandler(Filters.text, commands_admins)],
     )
     dis.add_handler(conv_handler)
     dis.add_handler(conv_handler_add_hash_post)

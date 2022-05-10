@@ -9,6 +9,13 @@ key_board_start = [
 
 # Клавиатура возвращающая назад
 back_key = [[InlineKeyboardButton("<-- Вернуться", callback_data="exit")]]
+back_key_back_to_choice = [
+    [
+        InlineKeyboardButton(
+            "<-- Вернуться на выбор мероприятия", callback_data="back_to_choice"
+        )
+    ]
+]
 
 
 # Клавиатура для подписки и отписки на мероприятие
