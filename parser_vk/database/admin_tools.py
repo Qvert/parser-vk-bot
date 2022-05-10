@@ -15,7 +15,9 @@ class Admin:
         :return: Возвращаем True или False в зависимости от того, есть ли админ в базе
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"SELECT admin_id FROM admins WHERE admin_id = '{admin_id}';")
+            cursor.execute(
+                f"SELECT admin_id FROM admins WHERE admin_id = '{admin_id}';"
+            )
             # logger.debug(f"Вернул проверку админа {cursor.fetchone()}")
             return cursor.fetchone() is None
 
@@ -67,7 +69,5 @@ class Admin:
                 f"INSERT INTO admins(admin_id, admin_password, admin_nickname, admin_hash, admin_post)"
                 f"VALUES('{admin_id}', '', '', '', '');"
             )
-            logger.info('Закинул admin_id в базу')
+            logger.info("Закинул admin_id в базу")
             self.connection.commit()
-
-

@@ -18,4 +18,3 @@ def check_word(hashed_password: str, user_password: str) -> True | False:
     :return:
     """
     return hashed_password == str(hashlib.sha256(user_password.encode()).hexdigest())
-

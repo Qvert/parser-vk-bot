@@ -40,7 +40,7 @@ def check_correct_news(news: str) -> True | False:
     :param news: Название мероприятия или группы вк
     :return: Возвращаем результат проверки
     """
-    return bool(re.search('[а-яА-Я]', news))
+    return bool(re.search("[а-яА-Я]", news))
 
 
 def check_correct_hash(hash: str) -> True | False:
@@ -48,8 +48,10 @@ def check_correct_hash(hash: str) -> True | False:
     :param hash: Хэштег, введённый администратором
     :return: Возвращаем результат проверки правильности ввода хэштега
     """
-    if answer := get_posts_vk(owner_id=hash, count=1)['items'][0]['text'] is not None and hash.startswith('#'):
-        logger.debug(f'Ответ запроса {answer}')
+    if answer := get_posts_vk(owner_id=hash, count=1)["items"][0][
+        "text"
+    ] is not None and hash.startswith("#"):
+        logger.debug(f"Ответ запроса {answer}")
         return True
     else:
         return False

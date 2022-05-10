@@ -23,6 +23,9 @@ keyboard_sub_unsub = [
 # Клавиатура для выбора количества показываемых постов
 key_board_count = [["1", "2", "3", "4", "5"], ["6", "7", "8", "9", "10"]]
 
+# Клавиатура для помощи
+key_board_help = [['/count', '/choice', '/frequency'], ['/view', '/admin', '/start_parser']]
+
 # Клавиатура для выбора частоты отправки постов новостей
 keyboard_frequency = [
     [
@@ -43,4 +46,3 @@ def generation_key_board(list_hash: list) -> list:
     for elem in list_hash:
         key_board_choice.append([InlineKeyboardButton(elem, callback_data=elem)])
     return key_board_choice
-

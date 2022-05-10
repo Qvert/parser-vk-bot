@@ -16,6 +16,7 @@ from key_board import (
     keyboard_sub_unsub,
     key_board_count,
     keyboard_frequency,
+    key_board_help
 )
 from database.tools import Database
 from database.admin_tools import Admin
@@ -35,6 +36,7 @@ key_board_starting = InlineKeyboardMarkup(key_board_start)
 back_key = InlineKeyboardMarkup(back_key)
 keyboard_sub_unsub = InlineKeyboardMarkup(keyboard_sub_unsub)
 key_board_count = ReplyKeyboardMarkup(key_board_count, one_time_keyboard=True)
+key_board_help = ReplyKeyboardMarkup(key_board_help)
 keyboard_frequency = InlineKeyboardMarkup(keyboard_frequency)
 
 
@@ -69,14 +71,14 @@ def button(update, context):
     if variant == "exit":
         query.edit_message_text(
             text="👇 Ниже вы можете настроить бота, а также начать собирать новости 👇\n"
-                 "📝 Выбрать количество показывающихся постов: /count\n"
-                 "🔀 Выбор мероприятия: /choice\n"
-                 "🕔 Выбор частоты отправки новостей: /frequency\n"
-                 "📋 Показать список подписанных новостей : /view\n"
-                 "🔐 Войти как администратор: /admin\n"
-                 "📬 Начать сбор постов с новостями: /start_parser",
+            "📝 Выбрать количество показывающихся постов: /count\n"
+            "🔀 Выбор мероприятия: /choice\n"
+            "🕔 Выбор частоты отправки новостей: /frequency\n"
+            "📋 Показать список подписанных новостей : /view\n"
+            "🔐 Войти как администратор: /admin\n"
+            "📬 Начать сбор постов с новостями: /start_parser",
             reply_markup=key_board_starting,
-    )
+        )
 
     if variant in list_hash_database():
         context.user_data["HASH"] = variant
@@ -85,8 +87,12 @@ def button(update, context):
 
     if variant == "back":
         query.edit_message_text(
-            generation_list_news(tag_name=list_hash_database(), news_list=list_name_new()),
-            reply_markup=InlineKeyboardMarkup(generation_key_board(list_hash_database())),
+            generation_list_news(
+                tag_name=list_hash_database(), news_list=list_name_new()
+            ),
+            reply_markup=InlineKeyboardMarkup(
+                generation_key_board(list_hash_database())
+            ),
         )
 
     # Если пользователь нажал подписаться
@@ -127,17 +133,19 @@ def helping(update: Updater, _):
         "📋 Показать список подписанных новостей : /view\n"
         "🔐 Войти как администратор: /admin\n"
         "📬 Начать сбор постов с новостями: /start_parser",
-        reply_markup=key_board_starting,
+        reply_markup=key_board_starting
     )
 
 
 @log_error
-def start(update: Updater, _):
+def start(update: Updater, context):
     update.message.reply_text(
-        "Приветствую тебя 😋, я бот-парсер, который соберёт\n"
-        "новости из групп вк. Для того чтобы узнать\n"
-        "как мной пользоваться нажми /help\n"
+        "Приветствую тебя, я бот-парсер,\n"
+        "который собирает новости из групп вк\n"
+        "Для того чтобы настроить меня и получать новости нажми /help"
     )
+    context.bot.send_photo(chat_id=update.effective_user.id,
+                           photo='https://www.ggdisseny.com/wp-content/uploads/2018/10/chatbot.png')
     id_hash = hash_word(str(update.effective_user.id))
     if db.user_exists(id_hash) is None:
         db.add_users(id_hash)
@@ -153,9 +161,7 @@ def answer_count(update: Updater, _):
         update.message.reply_text(
             "Я принял ваш ответ😁😁😁\n", reply_markup=ReplyKeyboardRemove()
         )
-        logger.info(
-            f"Записал количество постов {(db.get_count_posts(id_user))}"
-        )
+        logger.info(f"Записал количество постов {(db.get_count_posts(id_user))}")
 
 
 @log_error
@@ -212,9 +218,7 @@ def message_parse(context):
             id_users
         )  # Список хэштегов которые нужно выводить
 
-        logger.info(
-            f"Информация перед парсингом посты: {count} список хэш: {list_tag}"
-        )
+        logger.info(f"Информация перед парсингом посты: {count} список хэш: {list_tag}")
         for elem in list_tag:
             dict_posts = get_posts_vk(elem, count)
             context.bot.send_message(
@@ -265,9 +269,7 @@ def registration_new_admin_nickname(update, _):
 def registration_new_admin(update, _):
     # Функция регистраций нового администратора
     id_user = hash_word(str(update.effective_user.id))
-    answer = check_new_password(
-        update.message.text, admin_id=id_user
-    )
+    answer = check_new_password(update.message.text, admin_id=id_user)
     if answer[0] == 0:
         update.message.reply_text(answer[1])
         update.message.reply_text(
@@ -281,7 +283,7 @@ def registration_new_admin(update, _):
 
 
 @log_error
-def password(update, _):
+def password(update, context):
     # Функция проверки временного пароля для входа
     logger.debug("Перенаправил на password")
     if update.message.text == config.SECRET_KEY:
@@ -294,13 +296,15 @@ def password(update, _):
             "Для начала создайте и введите пароль, которым вы будете пользоваться"
         )
         return "REGISTRATION_NEW_ADMIN"
+    elif update.message.text.lower() == "стоп":
+        return commands_admins(update=update, context=context)
     else:
         update.message.reply_text("😮 Прошу прощения, но ключ неверный 😮")
         return "PASSWORD"
 
 
 @log_error
-def password_check_if_admin(update, _):
+def password_check_if_admin(update, context):
     # Функция проверки авторизаций для админа который был зарегестрирован
     try:
         text_check = update.message.text.split()
@@ -310,16 +314,20 @@ def password_check_if_admin(update, _):
         logger.info(f"Пароль и никнейм из базы {db_password_nickname}")
 
         # Проверка что пароль и никнейм совпадают с базой данных
-        if (
-            check_word(hashed_password=db_password_nickname[0], user_password=text_check[0])
-            and check_word(hashed_password=db_password_nickname[1], user_password=text_check[1])
+        if check_word(
+            hashed_password=db_password_nickname[0], user_password=text_check[0]
+        ) and check_word(
+            hashed_password=db_password_nickname[1], user_password=text_check[1]
         ):
-            update.message.reply_text(f'Приветствую вас {text_check[1]}')
+            update.message.reply_text(f"Приветствую вас {text_check[1]}")
             update.message.reply_text(
                 "Расширение списка новостных групп и хэштегов: /add_news\n"
                 "Удаление хэштега и названия мероприятия: /delete_news"
             )
             return ConversationHandler.END
+
+        elif update.message.text.lower() == "стоп":
+            return commands_admins(update=update, context=context)
         else:
             update.message.reply_text(
                 "Простите, но вы неправильно ввели данные. Проверьте пожалуйста."
@@ -341,6 +349,7 @@ def admin(update, _):
             "который был выдан вам для безопасности от других пользователей."
         )
         return "PASSWORD"
+
     else:
         update.message.reply_text(
             "👨‍💻 Вы уже являетесь администратором. 👨‍💻\n"
@@ -351,15 +360,15 @@ def admin(update, _):
 
 
 @log_error
-def commands_admins(update):
-    pass
+def commands_admins(update, context):
+    # Функция для остановки выполнения
+    update.message.reply_text("Вас понял, отменил действие")
+    return ConversationHandler.END
 
 
 @log_error
 def add_news(update, _):
-    update.message.reply_text(
-        'Для начала введите название мероприятия или группы '
-    )
+    update.message.reply_text("Для начала введите название мероприятия или группы ")
     return "ADD_NEWS"
 
 
@@ -368,13 +377,16 @@ def add_news_word(update, context):
     # Функция добавление название мероприятия
     text_news = update.message.text
     if check_correct_news(text_news):
-        context.user_data['NEWS'] = text_news
+        context.user_data["NEWS"] = text_news
+
         update.message.reply_text(
-            'Отлично, теперь введите хэштег или короткое название группы, откуда будем собирать новости'
+            "Отлично, теперь введите хэштег или короткое название группы, откуда будем собирать новости"
         )
         return "ADD_HASH"
     else:
-        update.message.reply_text('Простите, но название должно содержать только русские буквы')
+        update.message.reply_text(
+            "Простите, но название должно содержать только русские буквы"
+        )
         return "ADD_NEWS"
 
 
@@ -382,27 +394,31 @@ def add_news_word(update, context):
 def add_news_hash(update, context):
     # Функция добавления хэштега
     news_hash = update.message.text
-    logger.info('Получен хэштег')
+    logger.info("Получен хэштег")
     if check_correct_hash(news_hash):
-        delete_add_hash_post_to_database(hash=news_hash, news=context.user_data['NEWS'], key='добавить')
+        delete_add_hash_post_to_database(
+            hash=news_hash, news=context.user_data["NEWS"], key="добавить"
+        )
+        update.message.reply_text("Отлично, список групп успешно расширен)\n")
         update.message.reply_text(
-            'Отлично, список групп успешно расширен)\n'
+            "Расширение списка новостных групп и хэштегов: /add_news\n"
+            "Удаление хэштега и названия мероприятия: /delete_news"
         )
         return ConversationHandler.END
     else:
-        update.message.reply_text(
-            'Пожалуйста, введите коректно хэштег'
-        )
+        update.message.reply_text("Пожалуйста, введите коректно хэштег")
         return "ADD_HASH"
 
 
 @log_error
 def delete_news(update, _):
     # Функция для удаления хэштега и названия группы
+    update.message.reply_text("Введите название группы")
+    update.message.reply_text("👇Ниже список мероприятий👇")
     update.message.reply_text(
-        "Введите сначала название группы"
+        '.\n'.join(list_name_new())
     )
-    return 'DELETE_POST'
+    return "DELETE_POST"
 
 
 @log_error
@@ -410,14 +426,16 @@ def delete_post(update, context):
     # Функция для получения названия поста для удаления
     post = update.message.text
     if post not in list_name_new():
-        update.message.reply_text('Проверьте правильность написания!!!')
-        return 'DELETE_POST'
+        update.message.reply_text("Проверьте правильность написания!!!")
+        return "DELETE_POST"
     else:
-        context.user_data['NEWS'] = post
+        context.user_data["NEWS"] = post
+        update.message.reply_text("Теперь введите хэштег группы")
+        update.message.reply_text("👇Ниже список хэштегов👇")
         update.message.reply_text(
-            'Теперь введите хэштег группы'
+            '.\n'.join(list_hash_database())
         )
-        return 'DELETE_HASH'
+        return "DELETE_HASH"
 
 
 @log_error
@@ -425,11 +443,17 @@ def delete_hash(update, context):
     # Функция для удаления хэштега и названия группы
     hash = update.message.text
     if hash not in list_hash_database():
-        update.message.text('Неправильно набран хэштег!!!')
+        update.message.text("Неправильно набран хэштег!!!")
         return "DELETE_HASH"
     else:
-        delete_add_hash_post_to_database(hash=hash, news=context.user_data['NEWS'], key='удалить')
-        update.message.reply_text('Список успешно изменён')
+        delete_add_hash_post_to_database(
+            hash=hash, news=context.user_data["NEWS"], key="удалить"
+        )
+        update.message.reply_text("Список успешно изменён")
+        update.message.reply_text(
+            "Расширение списка новостных групп и хэштегов: /add_news\n"
+            "Удаление хэштега и названия мероприятия: /delete_news"
+        )
         return ConversationHandler.END
 
 
@@ -442,7 +466,9 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("admin", admin)],
         states={
-            "PASSWORD": [MessageHandler(Filters.text, password)],
+            "PASSWORD": [
+                MessageHandler(Filters.text, password)
+            ],
             "REGISTRATION_NEW_ADMIN": [
                 MessageHandler(Filters.text, registration_new_admin)
             ],
@@ -451,35 +477,39 @@ def main():
             ],
             "PASSWORD_CHECK_IF_ADMIN": [
                 MessageHandler(Filters.text, password_check_if_admin)
-            ],
+            ]
         },
-        fallbacks=[CommandHandler("cancel", commands_admins)]
+        fallbacks=[MessageHandler(Filters.text, commands_admins)],
     )
 
-    conv_handler_news = ConversationHandler(
-        entry_points=[CommandHandler("add_news", add_news)],
+    conv_handler_add_hash_post = ConversationHandler(
+        entry_points=[CommandHandler('add_news', add_news)],
         states={
             "ADD_NEWS": [
                 MessageHandler(Filters.text, add_news_word)
             ],
             "ADD_HASH": [
                 MessageHandler(Filters.text, add_news_hash)
-            ]
+            ],
         },
-        fallbacks=[CommandHandler("cancel", commands_admins)]
+        fallbacks=[MessageHandler(Filters.text, commands_admins)]
     )
 
-    conv_handler_delete_news = ConversationHandler(
-        entry_points=[CommandHandler("delete_news", delete_news)],
+    conv_handler_delete_hash_post = ConversationHandler(
+        entry_points=[CommandHandler('delete_news', delete_news)],
         states={
-            "DELETE_POST": [MessageHandler(Filters.text, delete_post)],
-            "DELETE_HASH": [MessageHandler(Filters.text, delete_hash)]
+            "DELETE_POST": [
+                MessageHandler(Filters.text, delete_post)
+            ],
+            "DELETE_HASH": [
+                MessageHandler(Filters.text, delete_hash)
+            ]
         },
-        fallbacks=[CommandHandler("cancel", commands_admins)]
+        fallbacks=[MessageHandler(Filters.text, commands_admins)]
     )
-    dis.add_handler(conv_handler_delete_news)
-    dis.add_handler(conv_handler_news)
     dis.add_handler(conv_handler)
+    dis.add_handler(conv_handler_add_hash_post)
+    dis.add_handler(conv_handler_delete_hash_post)
     dis.add_handler(CommandHandler("admin", admin))
     dis.add_handler(CommandHandler("help", helping))
     dis.add_handler(CommandHandler("start", start))

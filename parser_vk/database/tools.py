@@ -129,7 +129,9 @@ class Database:
         :return: Обновляет поле в базе данных
         """
         with self.connection.cursor() as cursor:
-            cursor.execute(f"UPDATE users SET counts = {count} WHERE user_id = '{id_user}'")
+            cursor.execute(
+                f"UPDATE users SET counts = {count} WHERE user_id = '{id_user}'"
+            )
             logger.info("Изменил количество постов")
             self.connection.commit()
 
