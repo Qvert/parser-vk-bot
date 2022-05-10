@@ -16,7 +16,7 @@ from key_board import (
     keyboard_sub_unsub,
     key_board_count,
     keyboard_frequency,
-    key_board_help
+    # key_board_help
 )
 from database.tools import Database
 from database.admin_tools import Admin
@@ -24,7 +24,7 @@ from parser_vk.parser_vk_function import get_posts_vk
 from tag_name import *
 import answer_options
 from validators import *
-import config
+import os
 from loguru import logger
 from hash_function import *
 
@@ -36,7 +36,7 @@ key_board_starting = InlineKeyboardMarkup(key_board_start)
 back_key = InlineKeyboardMarkup(back_key)
 keyboard_sub_unsub = InlineKeyboardMarkup(keyboard_sub_unsub)
 key_board_count = ReplyKeyboardMarkup(key_board_count, one_time_keyboard=True)
-key_board_help = ReplyKeyboardMarkup(key_board_help)
+# key_board_help = ReplyKeyboardMarkup(key_board_help)
 keyboard_frequency = InlineKeyboardMarkup(keyboard_frequency)
 
 
@@ -139,13 +139,15 @@ def helping(update: Updater, _):
 
 @log_error
 def start(update: Updater, context):
+    # Функция приветствия пользователя
+
+    context.bot.send_photo(chat_id=update.effective_user.id,
+                           photo='https://st3.depositphotos.com/29688696/31993/v/1600/depositphotos_319933748-stock-illustration-chat-bot-say-hi-robots.jpg')
     update.message.reply_text(
         "Приветствую тебя, я бот-парсер,\n"
         "который собирает новости из групп вк\n"
         "Для того чтобы настроить меня и получать новости нажми /help"
     )
-    context.bot.send_photo(chat_id=update.effective_user.id,
-                           photo='https://www.ggdisseny.com/wp-content/uploads/2018/10/chatbot.png')
     id_hash = hash_word(str(update.effective_user.id))
     if db.user_exists(id_hash) is None:
         db.add_users(id_hash)
@@ -286,7 +288,7 @@ def registration_new_admin(update, _):
 def password(update, context):
     # Функция проверки временного пароля для входа
     logger.debug("Перенаправил на password")
-    if update.message.text == config.SECRET_KEY:
+    if update.message.text == os.environ['SECRET_KEY']:
         update.message.reply_text("Уникальный ключ подходит 😉")
         update.message.reply_text(
             "Извините, но вы не зарегистрированы как администратор\n"
@@ -458,7 +460,7 @@ def delete_hash(update, context):
 
 
 def main():
-    update = Updater(token=config.BOT_TOKEN, use_context=True)
+    update = Updater(token=os.environ['BOT_TOKEN'], use_context=True)
     dis = update.dispatcher
     job_queue = JobQueue()
     job_queue.set_dispatcher(dis)

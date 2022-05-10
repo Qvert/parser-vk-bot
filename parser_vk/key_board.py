@@ -24,7 +24,7 @@ keyboard_sub_unsub = [
 key_board_count = [["1", "2", "3", "4", "5"], ["6", "7", "8", "9", "10"]]
 
 # Клавиатура для помощи
-key_board_help = [['/count', '/choice', '/frequency'], ['/view', '/admin', '/start_parser']]
+# key_board_help = [['/count', '/choice', '/frequency'], ['/view', '/admin', '/start_parser']]
 
 # Клавиатура для выбора частоты отправки постов новостей
 keyboard_frequency = [
